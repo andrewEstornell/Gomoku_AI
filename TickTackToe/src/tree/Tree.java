@@ -11,17 +11,37 @@ public class Tree
 	private int depth;
 	
 	private byte[][] rootBoardInterfaceMoves;
+	private int maxDepth;
 	
 	
 	
 	public Tree(BoardInterface rootBoardInterface)
-	{
+	{	
+		
+		
+		/*
+		 * 	I have no idea how to make this work well, trying to create a function to stop the tree from getting too large
+		 */
+		this.maxDepth = 1;
+		long optimalSize = 15*14*13*12*11*10*9*8*7*6*5*4*3*2;
+		long currentSize = (rootBoardInterface.getBoardSize1() * rootBoardInterface.getBoardSize2()) - rootBoardInterface.getTurn() + 1;
+		
+		while(currentSize< optimalSize && currentSize > 0)
+		{
+			currentSize = currentSize * (currentSize - 1);
+			this.maxDepth ++;
+		}
+	
+		
+		this.maxDepth  = 10;
+		
+		
 		this.rootBoardInterface = rootBoardInterface;
 		this.rootBoardInterface.isPlayable();
 		this.rootBoardInterface.setChildren(new ArrayList<BoardInterface>());
 		this.rootBoardInterfaceMoves = this.rootBoardInterface.getPossibleMoves();
 		this.depth = (this.rootBoardInterface.getBoardSize1() * this.rootBoardInterface.getBoardSize2()) - this.rootBoardInterface.getTurn();
-		this.generateChildren(this.rootBoardInterface);		
+		this.generateChildren(this.rootBoardInterface, (byte) 0);		
 	}
 	
 	/**
@@ -30,9 +50,9 @@ public class Tree
 	 * @param rootBoardInterface2
 	 */
 	
-	private void generateChildren(BoardInterface boardInterface) 
+	private void generateChildren(BoardInterface boardInterface, byte currentDepth) 
 	{
-		if(boardInterface.isPlayable())
+		if(boardInterface.isPlayable() && currentDepth < this.maxDepth)
 		{
 			byte[][] possibleMoves = boardInterface.getPossibleMoves();
 
@@ -41,6 +61,10 @@ public class Tree
 				// Duplicates board, makes the next possible moves, evaluates if the game is over or not
 				BoardInterface duplicateBoardInterface = new BoardInterface(boardInterface);
 				duplicateBoardInterface.makeMove(move[0], move[1]);
+				if(currentDepth == this.maxDepth - 1)
+				{
+					boardInterface.setIsLeaf(true);
+				}
 				duplicateBoardInterface.evaluateBoard();
 				
 				boardInterface.addChild(duplicateBoardInterface);
@@ -49,9 +73,17 @@ public class Tree
 				
 				
 				// continues process until all children have been added
-				generateChildren(duplicateBoardInterface);
+				generateChildren(duplicateBoardInterface, (byte) (currentDepth + 1));
+				duplicateBoardInterface.setBoard(null);
+				duplicateBoardInterface.setPossibleMoves(null);
 			}
 			
+		}
+		else
+		{
+			boardInterface.setIsLeaf(true);
+			boardInterface.setBoard(null);
+			boardInterface.setPossibleMoves(null);
 		}
 		
 	}

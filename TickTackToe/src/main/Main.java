@@ -21,6 +21,8 @@ public class Main
 		byte boardSize2 = scan.nextByte();
 		System.out.println("Number in a row to win: ");
 		byte inARowToWin = scan.nextByte();
+		System.out.println("1 to go first, 2 to go second: ");
+		byte whoGoesFirst = scan.nextByte();
 		BoardInterface boardInterface = new BoardInterface(boardSize1, boardSize2, inARowToWin);
 		
 		
@@ -31,7 +33,7 @@ public class Main
 		{
 			boardInterface.displayBoard();
 			
-			if(boardInterface.getTurn() % 2 == 0)
+			if((boardInterface.getTurn() + whoGoesFirst - 1)  % 2 == 0)
 			{
 				// Get user move via console and make move
 				consoleMove(boardInterface);

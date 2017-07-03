@@ -39,7 +39,6 @@ public class BoardInterface
 			this.board = generateNewBoard();
 			this.turn = 0;
 			
-			
 			// Derived fields
 			this.value = 0;
 			this.children = new ArrayList<BoardInterface>();
@@ -190,6 +189,10 @@ public class BoardInterface
 					this.value = 0;
 				}
 			}
+			else
+			{
+				this.value = 0;
+			}
 		}
 		
 		/**
@@ -272,7 +275,7 @@ public class BoardInterface
 				{
 					System.out.print("|" + (char)(-(7*this.board[i][j]) + 95));
 				}
-				System.out.println("|\n");
+				System.out.print("|\n");
 			}
 		}
 		
