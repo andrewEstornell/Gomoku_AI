@@ -18,7 +18,7 @@ public class BoardInterface
 	private byte value; // How good the given position is
 	private ArrayList<BoardInterface> children; // Board interfaces one move ahead of the current board interface
 	private byte winner; // 1 if first player wins, 2 if second player wins, 0 otherwise;
-	byte[][] possibleMoves; // List of all possible moves 
+	ArrayList<byte[]> possibleMoves; // List of all possible moves 
 	boolean isLeaf; // Determines if the game is in a playable state.
 	
 		
@@ -43,7 +43,7 @@ public class BoardInterface
 			this.value = 0;
 			this.children = new ArrayList<BoardInterface>();
 			this.winner = 0;
-			// this.possibleMoves is initialized in the method getPossibleMoves(),
+			this.possibleMoves = new ArrayList<byte[]>();
 			this.isLeaf = false;
 		}
 		
@@ -86,7 +86,7 @@ public class BoardInterface
 			this.value = boardInterfaceToBeCoppied.getValue();
 			this.children = new ArrayList<BoardInterface>(); // Do not want to copy this value, since each new board interface will have its own unique children
 			this.winner = boardInterfaceToBeCoppied.getWinner();
-			// this.possibleMoves is initialized in the method getPossibleMoves(),
+			this.possibleMoves = new ArrayList<byte[]>();
 			this.isLeaf = boardInterfaceToBeCoppied.isLeaf();
 			
 		}
@@ -134,8 +134,8 @@ public class BoardInterface
 		public boolean isPlayable()
 		{
 			// Determines if the game if still in a playable state
-			this.possibleMoves = new byte[(this.boardSize1 * this.boardSize2) - this.turn][2];
-			if(this.possibleMoves.length == 0)
+			this.possibleMoves = new ArrayList<byte[]>();
+			if((this.boardSize1 * this.boardSize2 - this.turn) == 0)
 			{
 				this.isLeaf = true;
 				return false;
@@ -146,16 +146,18 @@ public class BoardInterface
 			}
 			
 			// Generates a list of possible moves based on empty board spaces
-			int k = 0;
+			
 			for(byte i = 0; i < this.boardSize1; i++)
 			{
 				for(byte j = 0; j < this.boardSize2; j++)
 				{
 					if(this.board[i][j] == 0)
 					{
-						this.possibleMoves[k][0] = i;
-						this.possibleMoves[k][1] = j;
-						k++;
+						if(this.isAdjacentSquare(i, j) || this.turn == 0)
+						{
+							byte[] newMove = {i, j};
+							this.possibleMoves.add(newMove);
+						}
 					}
 				}
 			}
@@ -163,6 +165,67 @@ public class BoardInterface
 			
 		}
 		
+		private boolean isAdjacentSquare(byte i, byte j) 
+		{
+			if(i + 1 < this.boardSize1)
+			{
+				if(this.board[i + 1][j] != 0)
+				{
+					return true;
+				}
+				if(j + 1 < this.boardSize2)
+				{
+					if(this.board[i + 1][j + 1] != 0)
+					{
+						return true;
+					}
+				}
+				if(j - 1 >= 0)
+				{
+					if(this.board[i + 1][j - 1] != 0)
+					{
+						return true;
+					}
+				}
+			}
+			if(i - 1 >= 0)
+			{
+				if(this.board[i - 1][j] != 0)
+				{
+					return true;
+				}
+				if(j + 1 < this.boardSize2)
+				{
+					if(this.board[i - 1][j + 1] != 0)
+					{
+						return true;
+					}
+				}
+				if(j - 1 >= 0)
+				{
+					if(this.board[i - 1][j - 1] != 0)
+					{
+						return true;
+					}
+				}
+			}
+			if(j - 1 >= 0)
+			{
+				if(this.board[i][j - 1] !=0)
+				{
+					return true;
+				}
+			}
+			if(j + 1 < this.boardSize2)
+			{
+				if(this.board[i][j + 1] != 0)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public void addChild(BoardInterface childBoardInterface)
 		{
 			this.children.add(childBoardInterface);
@@ -207,7 +270,7 @@ public class BoardInterface
 			{
 				return true;
 			}
-			byte playersCharacter = (byte) (((this.turn) % 2) + 1);
+			byte playersCharacter = (byte) (((this.turn + 1) % 2) + 1);
 			for(byte i = 0; i < this.boardSize1; i++)
 			{
 				for(byte j = 0; j < this.boardSize2; j++)
@@ -424,8 +487,9 @@ public class BoardInterface
 		public ArrayList<BoardInterface> getChildren() {return this.children;}
 		public void setChildren(ArrayList<BoardInterface> children) {this.children = children;}
 		
-		public void setPossibleMoves(byte[][] possibleMoves) {this.possibleMoves = possibleMoves;}
-		public byte[][] getPossibleMoves() { return this.possibleMoves;}
+		public void setPossibleMoves(ArrayList<byte[]> possibleMoves) {this.possibleMoves = possibleMoves;}
+		public ArrayList<byte[]> getPossibleMoves() { return this.possibleMoves;}
+		
 		public byte getInARowToWin() {return this.inARowToWin;}
 		public void setInARowToWin(byte inARowToWin) {this.inARowToWin = inARowToWin;}
 				

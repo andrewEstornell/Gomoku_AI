@@ -10,7 +10,7 @@ public class Tree
 	private BoardInterface rootBoardInterface;
 	private int depth;
 	
-	private byte[][] rootBoardInterfaceMoves;
+	private ArrayList<byte[]> rootBoardInterfaceMoves;
 	private int maxDepth;
 	
 	
@@ -22,7 +22,7 @@ public class Tree
 		/*
 		 * 	I have no idea how to make this work well, trying to create a function to stop the tree from getting too large
 		 */
-		this.maxDepth = 1;
+		/*this.maxDepth = 1;
 		long optimalSize = 15*14*13*12*11*10*9*8*7*6*5*4*3*2;
 		long currentSize = (rootBoardInterface.getBoardSize1() * rootBoardInterface.getBoardSize2()) - rootBoardInterface.getTurn() + 1;
 		
@@ -30,10 +30,10 @@ public class Tree
 		{
 			currentSize = currentSize * (currentSize - 1);
 			this.maxDepth ++;
-		}
+		}*/
 	
 		
-		this.maxDepth  = 10;
+		this.maxDepth  = (rootBoardInterface.getBoardSize1() * rootBoardInterface.getBoardSize2()) + 1;
 		
 		
 		this.rootBoardInterface = rootBoardInterface;
@@ -54,7 +54,7 @@ public class Tree
 	{
 		if(boardInterface.isPlayable() && currentDepth < this.maxDepth)
 		{
-			byte[][] possibleMoves = boardInterface.getPossibleMoves();
+			ArrayList<byte[]> possibleMoves = boardInterface.getPossibleMoves();
 
 			for(byte[] move: possibleMoves)
 			{
@@ -68,22 +68,30 @@ public class Tree
 				duplicateBoardInterface.evaluateBoard();
 				
 				boardInterface.addChild(duplicateBoardInterface);
+				/*
+				if(currentDepth == 0)
+				{
+					System.out.println("________________________________________");
+				}
 				duplicateBoardInterface.displayBoard();
+				
 				System.out.print(duplicateBoardInterface.getValue() + "\n");
+				*/
 				
 				
 				// continues process until all children have been added
 				generateChildren(duplicateBoardInterface, (byte) (currentDepth + 1));
-				duplicateBoardInterface.setBoard(null);
-				duplicateBoardInterface.setPossibleMoves(null);
+				//duplicateBoardInterface.setBoard(null);
+				//duplicateBoardInterface.setPossibleMoves(null);
 			}
+			//boardInterface.setPossibleMoves(null);
 			
 		}
 		else
 		{
 			boardInterface.setIsLeaf(true);
-			boardInterface.setBoard(null);
-			boardInterface.setPossibleMoves(null);
+			//boardInterface.setBoard(null);
+			//boardInterface.setPossibleMoves(null);
 		}
 		
 	}
@@ -156,8 +164,8 @@ public class Tree
 		{
 			if(rootChildren.get(i).getValue() == optimalValue)
 			{
-				System.out.println( rootBoardInterfaceMoves[i][0] + ", " + rootBoardInterfaceMoves[i][1]);
-				return rootBoardInterfaceMoves[i];
+				System.out.println( rootBoardInterfaceMoves.get(i)[0] + ", " + rootBoardInterfaceMoves.get(i)[1]);
+				return rootBoardInterfaceMoves.get(i);
 			}
 		}
 		System.out.println("ERROR");
