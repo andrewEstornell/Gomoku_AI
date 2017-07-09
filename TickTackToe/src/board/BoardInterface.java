@@ -8,6 +8,7 @@ public class BoardInterface
 	private byte boardSize1;
 	private byte boardSize2;
 	private byte inARowToWin;
+	private byte whoGoesFirst; // 1 if player goes first, otherwise 2
 
 	// Consequential fields
 	private byte[][] board;
@@ -28,12 +29,13 @@ public class BoardInterface
 		 * @param boardSize1
 		 * @param boardSize2
 		 */
-		public BoardInterface(byte boardSize1, byte boardSize2, byte inARowToWin)
+		public BoardInterface(byte boardSize1, byte boardSize2, byte inARowToWin, byte whoGoesFirst)
 		{
 			// User input fields
 			this.boardSize1 = boardSize1;
 			this.boardSize2 = boardSize2;
 			this.inARowToWin = inARowToWin;
+			this.whoGoesFirst = (byte) (whoGoesFirst - 1);
 			
 			// Consequential fields
 			this.board = generateNewBoard();
@@ -76,6 +78,7 @@ public class BoardInterface
 			this.boardSize1 = boardInterfaceToBeCoppied.getBoardSize1();
 			this.boardSize2 = boardInterfaceToBeCoppied.getBoardSize2();
 			this.inARowToWin = boardInterfaceToBeCoppied.getInARowToWin();
+			this.whoGoesFirst = boardInterfaceToBeCoppied.getWhoGoesFirst();
 			
 			// Consequential fields
 			this.board = copyBoard(boardInterfaceToBeCoppied.getBoard());
@@ -239,17 +242,18 @@ public class BoardInterface
 		{
 			if(this.hasWon())
 			{
-				if(this.winner == 1)
+				if(this.winner == (byte)((this.whoGoesFirst % 2 ) + 1))
 				{
 					this.value = (byte)(-40 + this.turn);
 				}
-				else if(this.winner == 2)
+				else if(this.winner == (byte)((this.whoGoesFirst + 1) % 2) + 1)
 				{
 					this.value = (byte)(40 - this.turn);
 				}
 				else
 				{
 					this.value = 0;
+					System.out.println("ERROR, maybe");
 				}
 			}
 			else
@@ -498,6 +502,9 @@ public class BoardInterface
 
 		public boolean isLeaf() {return this.isLeaf;}
 		public void setIsLeaf(boolean isLeaf) {this.isLeaf = isLeaf;}
+
+		public byte getWhoGoesFirst() {return whoGoesFirst;}
+		public void setWhoGoesFirst(byte whoGoesFirst) {this.whoGoesFirst = whoGoesFirst;}
 
 
 

@@ -23,7 +23,7 @@ public class Main
 		byte inARowToWin = scan.nextByte();
 		System.out.println("1 to go first, 2 to go second: ");
 		byte whoGoesFirst = scan.nextByte();
-		BoardInterface boardInterface = new BoardInterface(boardSize1, boardSize2, inARowToWin);
+		BoardInterface boardInterface = new BoardInterface(boardSize1, boardSize2, inARowToWin, whoGoesFirst);
 		
 		
 		
@@ -43,7 +43,7 @@ public class Main
 			{
 				Tree tree = new Tree(boardInterface);
 				System.out.println("Tree made"); // Debug
-				byte[] AImove = tree.getBestMove();
+				byte[] AImove = tree.getBestMove2();
 				System.out.println("AI move generated"); // Debug
 				boardInterface.makeMove(AImove[0], AImove[1]);
 				System.out.println("AI move made"); // Debug
