@@ -53,7 +53,6 @@ public class BoardInterface
 		 *  Creates a new 2D board of bytes filled with all 0s
 		 * @return the newly generated board;
 		 */
-		
 		private byte[][] generateNewBoard() 
 		{
 			byte[][] board = new byte[this.boardSize1][this.boardSize2];
@@ -93,7 +92,11 @@ public class BoardInterface
 			this.isLeaf = boardInterfaceToBeCoppied.isLeaf();
 			
 		}
-		
+		/**
+		 * Creates a copy of the 2D array of bites that is the board
+		 * @param board2 2D array of bites
+		 * @return the copy of the 2D array of bytes
+		 */
 		private byte[][] copyBoard(byte[][] board2) 
 		{
 			byte[][] boardCopy = new byte[this.boardSize1][this.boardSize2];
@@ -131,13 +134,12 @@ public class BoardInterface
 		
 		/**
 		 * 	Checks that the game is not over
-		 * 
+		 * 	Stores all possible moves
 		 * @return false if there are no possibleMoves, true if possible moves were generated correctly
 		 */
 		public boolean isPlayable()
 		{
 			// Determines if the game if still in a playable state
-			this.possibleMoves = new ArrayList<byte[]>();
 			if((this.boardSize1 * this.boardSize2 - this.turn) == 0)
 			{
 				this.isLeaf = true;
@@ -149,13 +151,13 @@ public class BoardInterface
 			}
 			
 			// Generates a list of possible moves based on empty board spaces
-			
 			for(byte i = 0; i < this.boardSize1; i++)
 			{
 				for(byte j = 0; j < this.boardSize2; j++)
 				{
 					if(this.board[i][j] == 0)
 					{
+						// Only care about adjacent squares to places already moved
 						if(this.isAdjacentSquare(i, j) || this.turn == 0)
 						{
 							byte[] newMove = {i, j};
@@ -167,7 +169,12 @@ public class BoardInterface
 			return true;
 			
 		}
-		
+		/**
+		 * Checks if the given square board[i][j] is adjacent to a previous move
+		 * @param i
+		 * @param j
+		 * @return true if it is adjacent, false otherwise
+		 */
 		private boolean isAdjacentSquare(byte i, byte j) 
 		{
 			if(i + 1 < this.boardSize1)
@@ -238,17 +245,17 @@ public class BoardInterface
 		 * 	Checks if the game is over.	
 		 * 	If so, gives a static evaluation, else does nothing.
 		 */
-		public void evaluateBoard() 
+		public void evaluateBoard(int currentDepth) 
 		{
 			if(this.hasWon())
 			{
 				if(this.winner == (byte)((this.whoGoesFirst % 2 ) + 1))
 				{
-					this.value = (byte)(-40 + this.turn);
+					this.value = (byte)(-50 + currentDepth);
 				}
 				else if(this.winner == (byte)((this.whoGoesFirst + 1) % 2) + 1)
 				{
-					this.value = (byte)(40 - this.turn);
+					this.value = (byte)(50 - currentDepth);
 				}
 				else
 				{
@@ -428,7 +435,7 @@ public class BoardInterface
 						{
 							symXeqNegY = false;
 						}
-						if(!sym90 && !sym180 && !sym270 && !symX && !symY && !symXeqY && symXeqNegY)
+						if(!sym90 && !sym180 && !sym270 && !symX && !symY && !symXeqY && !symXeqNegY)
 						{
 							return false;
 						}
