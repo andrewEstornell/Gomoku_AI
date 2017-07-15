@@ -140,6 +140,7 @@ public class BoardInterface
 		public boolean isPlayable()
 		{
 			// Determines if the game if still in a playable state
+			this.possibleMoves = new ArrayList<byte[]>();
 			if((this.boardSize1 * this.boardSize2 - this.turn) == 0)
 			{
 				this.isLeaf = true;

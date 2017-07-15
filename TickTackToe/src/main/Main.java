@@ -3,13 +3,16 @@ package main;
 import java.util.Scanner;
 
 import board.BoardInterface;
+import gui.Button;
+import gui.GUI;
 import tree.Tree;
 
 public class Main 
 {
 	
-	
-	
+	public static GUI gui;
+	public static Button[][] buttons;
+	public static BoardInterface boardInterface;
 	
 	public static void main(String[] args)
 	{
@@ -23,8 +26,10 @@ public class Main
 		byte inARowToWin = scan.nextByte();
 		System.out.println("1 to go first, 2 to go second: ");
 		byte whoGoesFirst = scan.nextByte();
-		BoardInterface boardInterface = new BoardInterface(boardSize1, boardSize2, inARowToWin, whoGoesFirst);
+		boardInterface = new BoardInterface(boardSize1, boardSize2, inARowToWin, whoGoesFirst);
 		
+		gui = new GUI(boardSize1, boardSize2);
+		buttons = gui.getButtons();
 		
 		
 		
@@ -36,7 +41,22 @@ public class Main
 			if((boardInterface.getTurn() + whoGoesFirst - 1)  % 2 == 0)
 			{
 				// Get user move via console and make move
-				consoleMove(boardInterface);
+				//consoleMove(boardInterface);
+				byte [] move = gui.getMoveGUI();
+				byte x = move[0];
+				byte y = move[1];
+				while(!boardInterface.makeMove(x, y))
+				{
+					System.out.print("Invalid move, retry\nMove x: ");
+					
+					move = gui.getMoveGUI();
+					x = move[0];
+					y = move[1];
+					/*x = scan.nextInt();
+					System.out.print("Move y: ");
+					y = scan.nextInt();*/
+				}
+				buttons[x][y].iconSetting(x, y);
 				System.out.println("userMove made"); // Debug
 			}
 			else
@@ -47,6 +67,7 @@ public class Main
 				System.out.println("AI move generated"); // Debug
 				boardInterface.makeMove(AImove[0], AImove[1]);
 				System.out.println("AI move made"); // Debug
+				Main.buttons[AImove[0]][AImove[1]].iconSetting(AImove[0], AImove[1]);
 			}
 			
 			

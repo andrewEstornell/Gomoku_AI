@@ -22,7 +22,7 @@ public class Tree
 		
 		// These are temperary values, they work for now, but more calculation is needed to find the exact values
 		this.maxDepth  = 2 *  rootBoardInterface.getInARowToWin();
-		this.optimalSymCheck = (3 * this.rootBoardInterface.getInARowToWin()) / 2;
+		this.optimalSymCheck = (3 * rootBoardInterface.getInARowToWin()) / 2;
 		
 
 		this.rootBoardInterface = rootBoardInterface;
