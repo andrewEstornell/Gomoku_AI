@@ -13,7 +13,10 @@ public class Tree
 	private ArrayList<byte[]> rootBoardInterfaceMoves; // Allows us to pull the best move from the list of next possible moves
 	private int maxDepth; // Prevents the tree from growing too big
 	private int optimalSymCheck; // The depth at which checking for symmetry is no longer more efficent
-
+	private ArrayList<Byte> childValues;
+	private byte optimalVlaue;
+	private byte optimalMoveLocation;
+	private ArrayList<byte[]> initalMoves;
 	
 	private ArrayList<ArrayList<BoardInterface>> firstRows;
 	
@@ -21,8 +24,8 @@ public class Tree
 	{	
 		
 		// These are temperary values, they work for now, but more calculation is needed to find the exact values
-		this.maxDepth  = 2 *  rootBoardInterface.getInARowToWin();
-		this.optimalSymCheck = (3 * rootBoardInterface.getInARowToWin()) / 2;
+		this.maxDepth  = 2 *  rootBoardInterface.getInARowToWin() ;
+		this.optimalSymCheck = 2;//Math.min(rootBoardInterface.getInARowToWin(), (rootBoardInterface.getBoardSize1() * rootBoardInterface.getBoardSize2()) - rootBoardInterface.getTurn() -1);
 		
 
 		this.rootBoardInterface = rootBoardInterface;
@@ -31,7 +34,8 @@ public class Tree
 		this.rootBoardInterfaceMoves = this.rootBoardInterface.getPossibleMoves(); 
 		this.rootBoardInterface.setValue((byte)-2); // Used in print out later to test if the rootBoardInterface value was actually changed
 		this.firstRows = new ArrayList<ArrayList<BoardInterface>>(); // Stores the first few rows up to this.optimalSymCheck, so that we may check them for symmetry
-
+		this.childValues = new ArrayList<Byte>();
+		
 		// Adds rows 0 to optimalSymCheck -1  of the tree so we can check these rows for symmetry
 		for(int i = 0; i < this.optimalSymCheck; i++)
 		{
@@ -40,7 +44,7 @@ public class Tree
 
 		
 		// Creates the tree and evaluates it
-		this.alphaBeta(this.rootBoardInterface, true, 0, (byte)-100, (byte)100);	
+		this.optimalVlaue = this.alphaBeta(this.rootBoardInterface, 0, (byte)-122, (byte)122, (byte) 1);	
 	}
 	
 	
@@ -49,154 +53,93 @@ public class Tree
 	 * 	Once a board has generated all of its children, minmax with alpha-beta pruning is run on that board
 	 * 	The last iteration of this function will store the optimal value in the rootBoardInterface
 	 * @param boardInterface Current board interface, children of this will be generated and evaluated
-	 * @param maximize true if we are taking the max value, false if we are taking the min value
-	 * @param currentDepth how far into the tree we are
+	 * @param currentDepth how far into the tree we are3
 	 * @param alpha 
 	 * @param beta 
-	 * @return 
+	 * @scalar -1 if human turn, 1 if AI turn
+	 * @return best value for a given position
 	 */
-	public byte alphaBeta(BoardInterface boardInterface, boolean maximize, int currentDepth, byte alpha, byte beta)
+	public byte alphaBeta(BoardInterface boardInterface, int currentDepth, byte alpha, byte beta, byte scalar)
 	{
-		// Generate more childBoards if conditions are met
-		if(boardInterface.isPlayable() && currentDepth < this.maxDepth)
+		// Once a leaf is reached, return the value of the leaf
+		if(boardInterface.hasWon() || !boardInterface.isPlayable() || currentDepth == this.maxDepth)
 		{
-			/*
-			 * Each row is mined or maxed, since the function is recursive we use booleans to keep track of this rather than current row number
-			 * If maximizing the AI is looking for the move that gives it the best rating, i.e. the best chance of the AI winning
-			 * The AI assumes a perfect opponent,
-			 * hence when we are minimizing the AI looks for the opponents move that gives the opponent the best move, i.e the worst chance of the AI winning
-			 * This can cause strange behavior, such as the AI making "non moves" once it sees a loss
-			 * To mitigate this we can make the static evaluations a function of both the board evaluation and the current depth
-			 * This way the AI tries to win as fast as possible, and lose as slowly as possible
-			 * Because humans are not perfect opponents this allows the AI to better capitalize on their mistakes instead of giving up when it notices a lose 
-			 */
-			if(maximize)
+			boardInterface.evaluateBoard(currentDepth, this.maxDepth);
+			boardInterface.setEvaluationType("exact");
+		    return (byte) (scalar * boardInterface.getValue());
+		}
+		if(currentDepth == 0)
+		{
+			this.initalMoves = boardInterface.getPossibleMoves();
+		}
+		// Check for sym, if value is exact, return value, otherwise adjust upper and lower bound accordingly
+		if(currentDepth < this.optimalSymCheck)
+		{
+			if(this.isTrivialBoard(boardInterface, currentDepth))
 			{
-				ArrayList<byte[]> possibleMoves = boardInterface.getPossibleMoves();
-		     
-				for(byte[] move: possibleMoves)
-		        {
-		            BoardInterface childBoardInterface = new BoardInterface(boardInterface); // Creates a deep copy of the current board so that we make moves on it
-		            childBoardInterface.makeMove(move[0], move[1]);
-		            
-		            // Check for symmetry. Growth rate of each row in the tree becomes almost linear with this, although the algorithm itself has roughly n!(n^2) run time
-		            if(currentDepth < this.optimalSymCheck && this.firstRows.get(currentDepth).size() > 0)
-		            {
-		            	boolean repeatBoard = false;
-		            	for(BoardInterface boardInterfaceToCheck: this.firstRows.get(currentDepth))
-		            	 {
-		            		// If the board is trivial, we do not store it and simply start the processes over on the next board
-		            		if(boardInterfaceToCheck.isEqualUpToSymmetry(childBoardInterface))
-		            		{
-		            			repeatBoard = true;
-		            			break;
-		            		}
-		            	}
-		            	  if(repeatBoard)
-		            	  {
-		            		  continue;
-		            	  }
-		              }
-		              
-		              childBoardInterface.evaluateBoard(currentDepth);
-		              boardInterface.addChild(childBoardInterface);
-		              // While we are still checking for symmetry, the boards are addd to an array list so that they may be easily recalled for evlauation
-		             
-		              /********************************************************************************************
-		               * *******************************************************************************************
-		               *  ////// SHould be fixed to only store the array of bytes that the BoardInterface holds////////////
-		               * ********************************************************************************************
-		               * *****************************************************************************************/
-		              if(currentDepth < this.optimalSymCheck)
-		              {
-		            	  this.firstRows.get(currentDepth).add(childBoardInterface);
-		              }
-		              
-		              /*
-		               * This is the bread and butter of the whole method
-		               * Run min max on the children, but now store the max value in Alpha and the min value in Beta
-		               * When checking if alpha > beta, then we can prune and not do not need continue with any evaluation of the current board or its children
-		               * This is achieved by simply breaking the loop 
-		               */
-		              alpha = (byte) Math.max(alpha, alphaBeta(childBoardInterface, false, currentDepth + 1, alpha, beta));
-		              if(alpha >= beta)
-		              {
-		                  break;
-		              }
-		          }
-				  // Now that the optimal value of the children has been found, it can now be stored in the parent boardInterface
-		          boardInterface.setValue(alpha);
-		          /*
-		           * At the end of algorithm we only care which child of the very first board interface has the optimal value, 
-		           * To save memory we can toast the child of any board that is at a depth of 2 or greater
-		           */
-		          if(currentDepth > 1)
-		          {
-		        	  boardInterface.setChildren(null);
-		          }
-		          return alpha; // Alpha is the optimal value of the children node, it is being returned to the parent board
-			  }
-		      /*
-		       * If we are minimizing, then we look for the lowest value, i.e. the best move that AI thinks the human player make,
-		       * The lowest value is now the most optimal
-		       * Beta is produced here instead of alpha
-		       */
-			  else if(!maximize)
-			  {
-		          ArrayList<byte[]> possibleMoves = boardInterface.getPossibleMoves();    
-		  	       for(byte[] move: possibleMoves)
-		  	       {
-		  		      BoardInterface childBoardInterface = new BoardInterface(boardInterface);
-		              childBoardInterface.makeMove(move[0], move[1]);
-		              
-		              if(currentDepth < this.optimalSymCheck && this.firstRows.get(currentDepth).size() > 0)
-		              {
-		            	  boolean repeatBoard = false;
-		            	  for(BoardInterface boardInterfaceToCheck: this.firstRows.get(currentDepth))
-		            	  {
-		            		  if(boardInterfaceToCheck.isEqualUpToSymmetry(childBoardInterface))
-		            		  {
-		            			  repeatBoard = true;
-		            			  break;
-		            		  }
-		            	  }
-		            	  if(repeatBoard)
-		            	  {
-		            		  continue;
-		            	  }
-		              }
-		              
-		              childBoardInterface.evaluateBoard(currentDepth);
-		              boardInterface.addChild(childBoardInterface);
-		              
-		              
-		              if(currentDepth < this.optimalSymCheck)
-		              {
-		            	  this.firstRows.get(currentDepth).add(childBoardInterface);
-		              }
-		              beta = (byte) Math.min(beta, alphaBeta(childBoardInterface, true, currentDepth + 1, alpha, beta));
-		              if(alpha >= beta)
-		              {
-		            	  
-		                  break;
-		              }
-		  	       }
-		          boardInterface.setValue(beta);
-		          
-		          if(currentDepth > 1)
-		          {
-		        	  boardInterface.setChildren(null);
-		          }
-		          return beta;
-			  }
-		  }
-		  else
-		  {
-			  boardInterface.evaluateBoard(currentDepth);
-			  boardInterface.setIsLeaf(true);
-		      return boardInterface.getValue();
-		  }
-		  return -1; // Nothing should ever have a value of -1, can use this for debugging
+				if(boardInterface.getEvaluationType().compareTo("exact") == 0)
+				{
+					return boardInterface.getValue();
+				}
+				// Adjusting upper and lower bounds if needed
+				else if(boardInterface.getEvaluationType().compareTo("lower") == 0)
+				{
+					beta = (byte) Math.min(beta, boardInterface.getValue());
+				}
+				else if(boardInterface.getEvaluationType().compareTo("upper") == 0)
+				{
+					alpha = (byte) Math.max(alpha, boardInterface.getValue());
+				}
+				// Fast prune
+				if(alpha >= beta)
+				{
+					return boardInterface.getValue();
+				}
+			}
+		}
+		
+		byte bestValue = -122; // Worst possible value
+		ArrayList<byte[]> possibleMoves = boardInterface.getPossibleMoves();
+		/*
+		 * Iterates through each board position one move in the future
+		 * Recursively calls alpha beta on this new position until one of two cases is met
+		 * 1.) the board is no loner in play
+		 * 		- in this case the baord is given an exact evaulation
+		 * 2.) the board is discovered to be trivial
+		 * 		- the board will be given a derived value
+		 * 		- if the derived value is discored to be exact, that exact value is  the value of alpha beta
+		 * 		- if the derived value is a bound, we update its corrisponding bound as needed
+		 */
+		for(byte[] move: possibleMoves)
+		{
+			BoardInterface childBoardInterface = new BoardInterface(boardInterface);
+			childBoardInterface.makeMove(move[0], move[1]);
+			
+			byte childValue = (byte) -this.alphaBeta(childBoardInterface, (byte)(currentDepth + 1), (byte)-beta, (byte)-alpha, (byte)-scalar);
+			if(currentDepth == 0)
+			{
+				this.childValues.add(childValue);
+			}
+			
+			bestValue = (byte) Math.max(bestValue, childValue); // updating best value
+			alpha = (byte) Math.max(alpha, childValue); // updating upper bound
+			// Slow prune
+			if(alpha >= beta)
+			{
+				break;
+			}
+		}
+		// Seting value and bound type
+		boardInterface.setValue(bestValue);
+		if(scalar == -1)
+		{
+			boardInterface.setEvaluationType("lower");
+		}
+		else if(scalar == 1)
+		{
+			boardInterface.setEvaluationType("upper");
+		}
+		return bestValue;
 	}
 	
 	
@@ -211,29 +154,43 @@ public class Tree
 	 */
 	public byte[] getBestMove2()
 	{
-		ArrayList<BoardInterface> rootChildren = this.rootBoardInterface.getChildren();
-		int numberOfChildren = rootChildren.size();
-		
-		// Debug print out loop
-		for(int i = 0; i < this.optimalSymCheck; i++)
+		byte k = 0;
+		for(Byte value: this.childValues)
 		{
-			System.out.println("Current row0 size: " + this.firstRows.get(i).size()); // Using in run time calculations
-		}
-		System.out.println("optimal value: " + this.rootBoardInterface.getValue()); // Debug print out
-		
-		// Finds the child with the optimal value
-		for(int i = 0; i < numberOfChildren; i++)
-		{
-			if(rootChildren.get(i).getValue() == this.rootBoardInterface.getValue())
+			if(value == this.optimalVlaue)
 			{
-				System.out.println( rootBoardInterfaceMoves.get(i)[0] + ", " + rootBoardInterfaceMoves.get(i)[1]); // Debug print out
-				return rootBoardInterfaceMoves.get(i);
+				this.optimalMoveLocation = k;
+				break;
+			}
+			k++;
+		}
+		return this.initalMoves.get(this.optimalMoveLocation);
+	}
+	
+	/**
+	 * Checks for redundant boards, the board is determined to be new, the board is stored in first rows
+	 * @param boardInterface
+	 * @param currentDepth
+	 * @return true if board interface is redundant, false otherwise
+	 */
+	private boolean isTrivialBoard(BoardInterface boardInterface, int currentDepth)
+	{
+		if(this.firstRows.get(currentDepth).size() == 0)
+		{
+			this.firstRows.get(currentDepth).add(boardInterface);
+			return false;
+		}
+		for(BoardInterface storedBoardInterface: this.firstRows.get(currentDepth))
+		{
+			if(boardInterface.isEqualUpToSymmetry(storedBoardInterface))
+			{
+				boardInterface.setValue(storedBoardInterface.getValue());
+				boardInterface.setEvaluationType(storedBoardInterface.getEvaluationType());
+				return true;
 			}
 		}
-		System.out.println("ERROR"); // Should never reach here
-		return null;
-		
-		
+		this.firstRows.get(currentDepth).add(boardInterface);
+		return false;
 	}
 	
 	

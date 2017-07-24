@@ -19,8 +19,9 @@ public class BoardInterface
 	private byte value; // How good the given position is
 	private ArrayList<BoardInterface> children; // Board interfaces one move ahead of the current board interface
 	private byte winner; // 1 if first player wins, 2 if second player wins, 0 otherwise;
-	ArrayList<byte[]> possibleMoves; // List of all possible moves 
-	boolean isLeaf; // Determines if the game is in a playable state.
+	private ArrayList<byte[]> possibleMoves; // List of all possible moves 
+	private boolean isLeaf; // Determines if the game is in a playable state.
+	private String evaluationType;
 	
 		
 		
@@ -47,6 +48,7 @@ public class BoardInterface
 			this.winner = 0;
 			this.possibleMoves = new ArrayList<byte[]>();
 			this.isLeaf = false;
+			this.setEvaluationType("NotEvaluated");
 		}
 		
 		/**
@@ -245,18 +247,24 @@ public class BoardInterface
 		/**
 		 * 	Checks if the game is over.	
 		 * 	If so, gives a static evaluation, else does nothing.
+		 * @return 
 		 */
-		public void evaluateBoard(int currentDepth) 
+		public byte evaluateBoard(int currentDepth, int maxDepth) 
 		{
 			if(this.hasWon())
 			{
 				if(this.winner == (byte)((this.whoGoesFirst % 2 ) + 1))
 				{
-					this.value = (byte)(-50 + currentDepth);
+					this.value = (byte)(-110 + currentDepth);
 				}
 				else if(this.winner == (byte)((this.whoGoesFirst + 1) % 2) + 1)
 				{
-					this.value = (byte)(50 - currentDepth);
+					this.value = (byte)(110 - currentDepth);
+				}
+				else if(this.turn == this.boardSize1 * this.boardSize2)
+				{
+					this.value = 0; 
+					System.out.println("TIE");
 				}
 				else
 				{
@@ -266,8 +274,152 @@ public class BoardInterface
 			}
 			else
 			{
-				this.value = 0;
+				this.value = this.heuristicEvaluation(currentDepth, maxDepth);
+				//System.out.println("game still in play");
 			}
+			return this.value;
+		}
+		
+		/**
+		 * Need a way to evaluate boards that are not yet won or lost when we reach max depth
+		 * @return a heuristic evaluation of the given leaf board
+		 */
+		public byte heuristicEvaluation(int currentDepth, int maxDepth)
+		{
+			byte value = 0;
+
+			if(currentDepth <= maxDepth)
+			{
+				byte playerCharacter = (byte) (((this.turn + 1) % 2) + 1);
+				for(byte i = 0; i < this.boardSize1; i++)
+				{
+					for(byte j = 0; j < this.boardSize2; j++)
+					{
+						// Checks for closeness to a win
+						if(this.board[i][j] == playerCharacter)
+						{
+							// Check for closeness to winning in rows
+							byte k = 1;
+							for(k = 1; k <= this.inARowToWin; k++)
+							{
+								if(i + k >= this.boardSize1 || this.board[i + k][j] == ((this.turn) % 2) + 1)
+								{
+									break;
+								}
+							}
+							if(k == this.inARowToWin - 1)
+							{
+								value++;
+							}
+							
+							// Reset k check for closeness to wining in columns
+							k = 1;
+							for(k = 1; k <= this.inARowToWin; k++)
+							{
+								if(j + k >= this.boardSize2 || this.board[i][j + k] == ((this.turn) % 2) + 1)
+								{
+									break;
+								}
+							}
+							if(k == this.inARowToWin - 1)
+							{
+								value++;
+							}
+							
+							// Reset k check for closeness to wining in columns
+							k = 1;
+							for(k = 1; k <= this.inARowToWin; k++)
+							{
+								if(i + k >= this.boardSize1 || j + k >= this.boardSize2 || this.board[i + k][j + k] == ((this.turn) % 2) + 1)
+								{
+									break;
+								}
+							}
+							if(k == this.inARowToWin - 1)
+							{
+								value++;
+							}
+							
+							// Reset k check for closeness to wining in columns
+							k = 1;
+							for(k = 1; k <= this.inARowToWin; k++)
+							{
+								if(i + k >= this.boardSize1|| j - k < 0 || this.board[i + k][j - k] == ((this.turn) % 2) + 1)
+								{
+									break;
+								}
+							}
+							if(k == this.inARowToWin - 1)
+							{
+								value++;
+							}
+						}
+						
+						// Checks for diamond structure
+						else if(board[i][j] == 0)
+						{
+							byte counter = 0;
+							if(i + 1 < this.boardSize1 && this.board[i + 1][j] == playerCharacter)
+							{
+								for(byte k = -1; k < 2; k++)
+								{
+									if(j + k < this.boardSize2 && j + k >= 0)
+									{
+										if(this.board[i + 1][j + k] == 0)
+										{
+											counter++;
+										}
+									}
+								}
+							}
+							if(i - 1 >=0 && this.board[i - 1][j] == playerCharacter)
+							{
+								for(byte k = -1; k < 2; k++)
+								{
+									if(j + k < this.boardSize2 && j + k >= 0)
+									{
+										if(this.board[i - 1][j + k] == 0)
+										{
+											counter++;
+										}
+									}
+								}
+							}
+							if(j + 1 < this.boardSize2 && this.board[i][j + 1] == playerCharacter)
+							{
+								for(byte k = -1; k < 2; k++)
+								{
+									if(i + k < this.boardSize1 && i + k >= 0)
+									{
+										if(this.board[i + k][j + 1] == 0)
+										{
+											counter++;
+										}
+									}
+								}
+							}
+							if(j - 1 >= 0 && this.board[i][j - 1] == playerCharacter)
+							{
+								for(byte k = -1; k < 2; k++)
+								{
+									if(i + k < this.boardSize1 && i + k >= 0)
+									{
+										if(this.board[i + k][j - 1] == 0)
+										{
+											counter++;
+										}
+									}
+								}
+							}
+							
+						value += counter;
+						}
+					}
+				}
+			}
+			
+			
+			return  (byte) (3 * value);
 		}
 		
 		/**
@@ -277,11 +429,7 @@ public class BoardInterface
 		 */
 		public boolean hasWon()
 		{
-			
-			if(this.isLeaf)
-			{
-				return true;
-			}
+
 			byte playersCharacter = (byte) (((this.turn + 1) % 2) + 1);
 			for(byte i = 0; i < this.boardSize1; i++)
 			{
@@ -384,6 +532,7 @@ public class BoardInterface
 		 */
 		public boolean isEqualUpToSymmetry(BoardInterface otherBoardInterface)
 		{
+		
 			byte[][] otherBoard = otherBoardInterface.getBoard();
 			if(this.isEquale(otherBoardInterface))
 			{
@@ -404,6 +553,7 @@ public class BoardInterface
 			
 			if(this.boardSize1 == this.boardSize2)
 			{
+				
 				for(byte i = 0; i < this.boardSize1; i++)
 				{
 					for(byte j = 0; j < this.boardSize2; j++)
@@ -449,7 +599,7 @@ public class BoardInterface
 				{
 					for(byte j = 0; j < this.boardSize2; j++)
 					{
-						if(this.board[i][j] != otherBoard[this.boardSize1 - 1 - i][this.boardSize1 - 1 - j])
+						if(this.board[i][j] != otherBoard[this.boardSize1 - 1 - i][this.boardSize2 - 1 - j])
 						{
 							sym180 = false;
 						}
@@ -513,6 +663,16 @@ public class BoardInterface
 
 		public byte getWhoGoesFirst() {return whoGoesFirst;}
 		public void setWhoGoesFirst(byte whoGoesFirst) {this.whoGoesFirst = whoGoesFirst;}
+
+		public String getEvaluationType() {
+			return evaluationType;
+		}
+
+		public void setEvaluationType(String evaluationType) {
+			this.evaluationType = evaluationType;
+		}
+
+
 
 
 
