@@ -19,13 +19,13 @@ public class Main
 		// Set up and user input
 		Scanner scan = new Scanner(System.in);
 		System.out.print("Size of board1: ");
-		byte boardSize1 = scan.nextByte();
+		int boardSize1 = scan.nextInt();
 		System.out.print("Size of board2: ");
-		byte boardSize2 = scan.nextByte();
+		int boardSize2 = scan.nextInt();
 		System.out.println("Number in a row to win: ");
-		byte inARowToWin = scan.nextByte();
+		int inARowToWin = scan.nextInt();
 		System.out.println("1 to go first, 2 to go second: ");
-		byte whoGoesFirst = scan.nextByte();
+		int whoGoesFirst = scan.nextInt();
 		boardInterface = new BoardInterface(boardSize1, boardSize2, inARowToWin, whoGoesFirst);
 		
 		gui = new GUI(boardSize1, boardSize2);
@@ -42,9 +42,9 @@ public class Main
 			{
 				// Get user move via console and make move
 				//consoleMove(boardInterface);
-				byte [] move = gui.getMoveGUI();
-				byte x = move[0];
-				byte y = move[1];
+				int [] move = gui.getMoveGUI();
+				int x = move[0];
+				int y = move[1];
 				while(!boardInterface.makeMove(x, y))
 				{
 					System.out.print("Invalid move, retry\nMove x: ");
@@ -63,7 +63,7 @@ public class Main
 			{
 				Tree tree = new Tree(boardInterface);
 				System.out.println("Tree made"); // Debug
-				byte[] AImove = tree.getBestMove2();
+				int[] AImove = tree.getBestMove2();
 				System.out.println("AI move generated"); // Debug
 				boardInterface.makeMove(AImove[0], AImove[1]);
 				System.out.println("AI move made"); // Debug
@@ -85,17 +85,17 @@ public class Main
 	{
 		Scanner scan = new Scanner(System.in);
 		System.out.print("x: ");
-		byte x = scan.nextByte();
+		int x = scan.nextInt();
 		System.out.print("y: ");
-		byte y = scan.nextByte();
+		int y = scan.nextInt();
 		
 		while(!boardInterface.makeMove(x, y))
 		{
 			System.out.println("retry");
 			System.out.print("x: ");
-			x = scan.nextByte();
+			x = scan.nextInt();
 			System.out.print("y: ");
-			y = scan.nextByte();
+			y = scan.nextInt();
 		}
 	}
 	

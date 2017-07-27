@@ -51,9 +51,9 @@ public class GUI extends JFrame
 	 * Waits for the action listener of a click to store the coordinates of a potential GUI move
 	 * @return thee x, y coordinate of the GUI move
 	 */
-	public byte[] getMoveGUI()
+	public int[] getMoveGUI()
 	{
-		byte[] guiMove = new byte[2];
+		int[] guiMove = new int[2];
 		while(!this.wasClicked())
 		{
 			boolean breakOut = false;
@@ -65,8 +65,8 @@ public class GUI extends JFrame
 				{
 					if(this.buttons[i][j].getGUIClick()[0] >= 0 && this.buttons[i][j].getGUIClick()[1] >= 0)
 					{
-						guiMove[0] = (byte) this.buttons[i][j].getGUIClick()[0];
-						guiMove[1] = (byte) this.buttons[i][j].getGUIClick()[1];
+						guiMove[0] = (int) this.buttons[i][j].getGUIClick()[0];
+						guiMove[1] = (int) this.buttons[i][j].getGUIClick()[1];
 						
 						buttons[i][j].resetUserClick();
 						breakOut = true;

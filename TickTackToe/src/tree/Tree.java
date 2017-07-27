@@ -10,13 +10,17 @@ public class Tree
 	private BoardInterface rootBoardInterface;
 	
 	
-	private ArrayList<byte[]> rootBoardInterfaceMoves; // Allows us to pull the best move from the list of next possible moves
+	private ArrayList<int[]> rootBoardInterfaceMoves; // Allows us to pull the best move from the list of next possible moves
 	private int maxDepth; // Prevents the tree from growing too big
 	private int optimalSymCheck; // The depth at which checking for symmetry is no longer more efficent
-	private ArrayList<Byte> childValues;
-	private byte optimalVlaue;
-	private byte optimalMoveLocation;
-	private ArrayList<byte[]> initalMoves;
+	private ArrayList<Integer> childValues;
+	private int optimalValue;
+	private int optimalMoveLocation;
+	private ArrayList<int[]> initalMoves;
+	
+	private int numberOfTrivialBoards;
+	private long totalNumberOfBoards;
+	
 	
 	private ArrayList<ArrayList<BoardInterface>> firstRows;
 	
@@ -24,17 +28,20 @@ public class Tree
 	{	
 		
 		// These are temperary values, they work for now, but more calculation is needed to find the exact values
-		this.maxDepth  = 2 *  rootBoardInterface.getInARowToWin() ;
-		this.optimalSymCheck = 2;//Math.min(rootBoardInterface.getInARowToWin(), (rootBoardInterface.getBoardSize1() * rootBoardInterface.getBoardSize2()) - rootBoardInterface.getTurn() -1);
+		this.maxDepth = 2 * rootBoardInterface.getInARowToWin() + 1;
+		this.optimalSymCheck = rootBoardInterface.getInARowToWin();//Math.min(rootBoardInterface.getInARowToWin(), (rootBoardInterface.getBoardSize1() * rootBoardInterface.getBoardSize2()) - rootBoardInterface.getTurn() -1);
 		
+		
+		this.numberOfTrivialBoards = 0;
+		this.totalNumberOfBoards = 0;
 
 		this.rootBoardInterface = rootBoardInterface;
 		this.rootBoardInterface.isPlayable(); // This function also generates the ArrayList of possibleMoves for the board
 		this.rootBoardInterface.setChildren(new ArrayList<BoardInterface>()); // Reinitializes the child ArrayList so that there are not leftover children from previous iterations
 		this.rootBoardInterfaceMoves = this.rootBoardInterface.getPossibleMoves(); 
-		this.rootBoardInterface.setValue((byte)-2); // Used in print out later to test if the rootBoardInterface value was actually changed
+		this.rootBoardInterface.setValue(-2); // Used in print out later to test if the rootBoardInterface value was actually changed
 		this.firstRows = new ArrayList<ArrayList<BoardInterface>>(); // Stores the first few rows up to this.optimalSymCheck, so that we may check them for symmetry
-		this.childValues = new ArrayList<Byte>();
+		this.childValues = new ArrayList<Integer>();
 		
 		// Adds rows 0 to optimalSymCheck -1  of the tree so we can check these rows for symmetry
 		for(int i = 0; i < this.optimalSymCheck; i++)
@@ -44,7 +51,9 @@ public class Tree
 
 		
 		// Creates the tree and evaluates it
-		this.optimalVlaue = this.alphaBeta(this.rootBoardInterface, 0, (byte)-122, (byte)122, (byte) 1);	
+		this.optimalValue = this.alphaBeta(this.rootBoardInterface, 0, -10000, 10000, 1);
+		System.out.println("Number of Trivial boards: " + this.numberOfTrivialBoards);
+		System.out.println("Total number of boards:   " + this.totalNumberOfBoards);
 	}
 	
 	
@@ -59,14 +68,14 @@ public class Tree
 	 * @scalar -1 if human turn, 1 if AI turn
 	 * @return best value for a given position
 	 */
-	public byte alphaBeta(BoardInterface boardInterface, int currentDepth, byte alpha, byte beta, byte scalar)
+	public int alphaBeta(BoardInterface boardInterface, int currentDepth, int alpha, int beta, int scalar)
 	{
 		// Once a leaf is reached, return the value of the leaf
 		if(boardInterface.hasWon() || !boardInterface.isPlayable() || currentDepth == this.maxDepth)
 		{
 			boardInterface.evaluateBoard(currentDepth, this.maxDepth);
 			boardInterface.setEvaluationType("exact");
-		    return (byte) (scalar * boardInterface.getValue());
+		    return  (scalar * boardInterface.getValue());
 		}
 		if(currentDepth == 0)
 		{
@@ -77,6 +86,7 @@ public class Tree
 		{
 			if(this.isTrivialBoard(boardInterface, currentDepth))
 			{
+				this.numberOfTrivialBoards ++;
 				if(boardInterface.getEvaluationType().compareTo("exact") == 0)
 				{
 					return boardInterface.getValue();
@@ -84,11 +94,11 @@ public class Tree
 				// Adjusting upper and lower bounds if needed
 				else if(boardInterface.getEvaluationType().compareTo("lower") == 0)
 				{
-					beta = (byte) Math.min(beta, boardInterface.getValue());
+					beta =  Math.min(beta, boardInterface.getValue());
 				}
 				else if(boardInterface.getEvaluationType().compareTo("upper") == 0)
 				{
-					alpha = (byte) Math.max(alpha, boardInterface.getValue());
+					alpha =  Math.max(alpha, boardInterface.getValue());
 				}
 				// Fast prune
 				if(alpha >= beta)
@@ -98,8 +108,12 @@ public class Tree
 			}
 		}
 		
-		byte bestValue = -122; // Worst possible value
-		ArrayList<byte[]> possibleMoves = boardInterface.getPossibleMoves();
+		int bestValue = -122; // Worst possible value
+		ArrayList<int[]> possibleMoves = boardInterface.getPossibleMoves();
+		/*if(currentDepth < 0)
+		{
+			possibleMoves = this.moveOrdering(possibleMoves); 
+		}*/
 		/*
 		 * Iterates through each board position one move in the future
 		 * Recursively calls alpha beta on this new position until one of two cases is met
@@ -110,19 +124,21 @@ public class Tree
 		 * 		- if the derived value is discored to be exact, that exact value is  the value of alpha beta
 		 * 		- if the derived value is a bound, we update its corrisponding bound as needed
 		 */
-		for(byte[] move: possibleMoves)
+		for(int[] move: possibleMoves)
 		{
 			BoardInterface childBoardInterface = new BoardInterface(boardInterface);
 			childBoardInterface.makeMove(move[0], move[1]);
-			
-			byte childValue = (byte) -this.alphaBeta(childBoardInterface, (byte)(currentDepth + 1), (byte)-beta, (byte)-alpha, (byte)-scalar);
+			this.totalNumberOfBoards++;
+			int childValue =  -this.alphaBeta(childBoardInterface, (currentDepth + 1), -beta, -alpha, -scalar);
+			//childBoardInterface.displayBoard();
+			//System.out.println("Child value^^: " + childValue);
 			if(currentDepth == 0)
 			{
 				this.childValues.add(childValue);
 			}
 			
-			bestValue = (byte) Math.max(bestValue, childValue); // updating best value
-			alpha = (byte) Math.max(alpha, childValue); // updating upper bound
+			bestValue =  Math.max(bestValue, childValue); // updating best value
+			alpha =  Math.max(alpha, childValue); // updating upper bound
 			// Slow prune
 			if(alpha >= beta)
 			{
@@ -152,12 +168,12 @@ public class Tree
 	 * Checks through the children of the starting BoardInterface for the child that had the optimal value
 	 * @return the x, y coordinate of the move of the child board with the best value
 	 */
-	public byte[] getBestMove2()
+	public int[] getBestMove2()
 	{
-		byte k = 0;
-		for(Byte value: this.childValues)
+		int k = 0;
+		for(int value: this.childValues)
 		{
-			if(value == this.optimalVlaue)
+			if(value == this.optimalValue)
 			{
 				this.optimalMoveLocation = k;
 				break;
@@ -166,6 +182,7 @@ public class Tree
 		}
 		return this.initalMoves.get(this.optimalMoveLocation);
 	}
+	
 	
 	/**
 	 * Checks for redundant boards, the board is determined to be new, the board is stored in first rows
@@ -191,6 +208,39 @@ public class Tree
 		}
 		this.firstRows.get(currentDepth).add(boardInterface);
 		return false;
+	}
+	
+	private ArrayList<int[]> moveOrdering(ArrayList<int[]> possibleMoves)
+	{
+		ArrayList<int[]> orderedMoves = new ArrayList<int[]>();
+		int optimalValue = this.alphaBeta(this.rootBoardInterface, this.maxDepth / 3, -122, 122, 1);
+
+		int[] move = possibleMoves.get(this.optimalMoveLocation);
+
+		
+		while(this.childValues.size() > 0)
+		{
+			int k = 0;
+			int bestValue = -122;
+			for(int i = 0; i < this.childValues.size(); i++)
+			{
+				if(bestValue < this.childValues.get(i))
+				{
+					k = i;
+					bestValue = this.childValues.get(i);
+				}
+			}
+			int[] newMove = {this.initalMoves.get(k)[0], this.initalMoves.get(k)[1]};
+			orderedMoves.add(newMove);
+			
+			this.childValues.remove(k);
+			this.initalMoves.remove(k);
+			
+		}
+		
+		
+		
+		return orderedMoves;
 	}
 	
 	
