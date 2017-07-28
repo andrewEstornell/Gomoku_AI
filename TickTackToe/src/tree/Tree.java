@@ -10,13 +10,13 @@ public class Tree
 	private BoardInterface rootBoardInterface;
 	
 	
-	private int[][] rootBoardInterfaceMoves; // Allows us to pull the best move from the list of next possible moves
+	private ArrayList<int[]> rootBoardInterfaceMoves; // Allows us to pull the best move from the list of next possible moves
 	private int maxDepth; // Prevents the tree from growing too big
 	private int optimalSymCheck; // The depth at which checking for symmetry is no longer more efficent
 	private ArrayList<Integer> childValues;
 	private int optimalValue;
 	private int optimalMoveLocation;
-	private int[][] initalMoves;
+	private ArrayList<int[]> initalMoves;
 	
 	private int numberOfTrivialBoards;
 	private long totalNumberOfBoards;
@@ -108,8 +108,8 @@ public class Tree
 			}
 		}
 		
-		int bestValue = -1000; // Worst possible value
-		int[][] possibleMoves = boardInterface.getPossibleMoves();
+		int bestValue = -10000; // Worst possible value
+		ArrayList<int[]> possibleMoves = boardInterface.getPossibleMoves();
 		/*if(currentDepth < 0)
 		{
 			possibleMoves = this.moveOrdering(possibleMoves); 
@@ -180,7 +180,7 @@ public class Tree
 			}
 			k++;
 		}
-		return this.initalMoves[this.optimalMoveLocation];
+		return this.initalMoves.get(this.optimalMoveLocation);
 	}
 	
 	
@@ -230,11 +230,11 @@ public class Tree
 					bestValue = this.childValues.get(i);
 				}
 			}
-			int[] newMove = {this.initalMoves[k][0], this.initalMoves[k][1]};
+			int[] newMove = {this.initalMoves.get(k)[0], this.initalMoves.get(k)[1]};
 			orderedMoves.add(newMove);
 			
-			//this.childValues.remove(k);
-			//this.initalMoves.remove(k);
+			this.childValues.remove(k);
+			this.initalMoves.remove(k);
 			
 		}
 		
