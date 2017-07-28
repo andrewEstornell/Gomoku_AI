@@ -37,7 +37,7 @@ public class GUI extends JFrame
 				this.buttons[i][j] = new Button();
 				//colors every offset buttons black creating the checker board effect
 				this.panel.add(buttons[i][j]);
-				this.buttons[i][j].setActionCommand(i +""+ j);
+				this.buttons[i][j].setActionCommand(i + " " + j);
 			}
 		}
 		//adds the grid of buttons to the window

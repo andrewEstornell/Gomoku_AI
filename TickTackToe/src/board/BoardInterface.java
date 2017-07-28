@@ -24,7 +24,7 @@ public class BoardInterface
 	private int value; // How good the given position is
 	private ArrayList<BoardInterface> children; // Board interfaces one move ahead of the current board interface
 	private int winner; // 1 if first player wins, 2 if second player wins, 0 otherwise;
-	private ArrayList<int[]> possibleMoves; // List of all possible moves 
+	private int[][] possibleMoves; // List of all possible moves 
 	private boolean isLeaf; // Determines if the game is in a playable state.
 	private String evaluationType;
 	
@@ -51,7 +51,7 @@ public class BoardInterface
 			this.value = 0;
 			this.children = new ArrayList<BoardInterface>();
 			this.winner = 0;
-			this.possibleMoves = new ArrayList<int[]>();
+			this.possibleMoves = new int[60][2];
 			this.isLeaf = false;
 			this.setEvaluationType("NotEvaluated");
 		}
@@ -96,7 +96,7 @@ public class BoardInterface
 			this.value = boardInterfaceToBeCoppied.getValue();
 			this.children = new ArrayList<BoardInterface>(); // Do not want to copy this value, since each new board interface will have its own unique children
 			this.winner = boardInterfaceToBeCoppied.getWinner();
-			this.possibleMoves = new ArrayList<int[]>();
+			this.possibleMoves = new int[60][2];
 			this.isLeaf = boardInterfaceToBeCoppied.isLeaf();
 			
 		}
@@ -153,7 +153,7 @@ public class BoardInterface
 		public boolean isPlayable()
 		{
 			// Determines if the game if still in a playable state
-			this.possibleMoves = new ArrayList<int[]>();
+			this.possibleMoves = new int[60][2];
 			if((this.boardSize1 * this.boardSize2 - this.turn) == 0)
 			{
 				this.isLeaf = true;
@@ -166,13 +166,14 @@ public class BoardInterface
 			
 			if(this.turn == 0)
 			{
-				int[] newMove = { (this.boardSize1/2),  (this.boardSize2/2)}; 
-				this.possibleMoves.add(newMove);
+				int[] newMove = {(this.boardSize1/2),  (this.boardSize2/2)}; 
+				this.possibleMoves[0] = newMove;
 				return true;
 			}
 			
 			
 			// Generates a list of possible moves based on empty board spaces
+			int k = 0;
 			for(int i = 0; i < this.boardSize1; i++)
 			{
 				for(int j = 0; j < this.boardSize2; j++)
@@ -183,7 +184,7 @@ public class BoardInterface
 						if(this.isAdjacentSquare(i, j))
 						{
 							int[] newMove = {i, j};
-							this.possibleMoves.add(newMove);
+							this.possibleMoves[k] = newMove;
 						}
 					}
 				}
@@ -306,12 +307,7 @@ public class BoardInterface
 		 */
 		public int heuristicEvaluation(int currentDepth, int maxDepth)
 		{
-			// Threat types
-			final int T0 = 100;
-			final int T1 = 50;
-			final int T2 = 33;
 			
-			// Threat evaluation
 			
 			
 			//// ADD CHECK FOR BOTH PLAYERS THREATS/////////
@@ -348,8 +344,8 @@ public class BoardInterface
 			{
 				value = value * (-1);
 			}
-			this.displayBoard();
-			System.out.println("H value:^^ " + value);
+			//this.displayBoard();
+			//System.out.println("H value:^^ " + value);
 			return value;
 		}
 		
@@ -490,7 +486,10 @@ public class BoardInterface
 		 */
 		public boolean hasWon()
 		{
-
+			if(this.winner != 0)
+			{
+				return true;
+			}
 			int playersCharacter =  (((this.turn + 1) % 2) + 1);
 			for(int i = 0; i < this.boardSize1; i++)
 			{
@@ -710,8 +709,8 @@ public class BoardInterface
 		public ArrayList<BoardInterface> getChildren() {return this.children;}
 		public void setChildren(ArrayList<BoardInterface> children) {this.children = children;}
 		
-		public void setPossibleMoves(ArrayList<int[]> possibleMoves) {this.possibleMoves = possibleMoves;}
-		public ArrayList<int[]> getPossibleMoves() { return this.possibleMoves;}
+		public void setPossibleMoves(int[][] possibleMoves) {this.possibleMoves = possibleMoves;}
+		public int[][] getPossibleMoves() { return this.possibleMoves;}
 		
 		public int getInARowToWin() {return this.inARowToWin;}
 		public void setInARowToWin(int inARowToWin) {this.inARowToWin = inARowToWin;}
