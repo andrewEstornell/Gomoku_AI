@@ -25,7 +25,7 @@ public class BoardInterface
 	//private ArrayList<BoardInterface> children; // Board interfaces one move ahead of the current board interface
 	private int winner; // 1 if first player wins, 2 if second player wins, 0 otherwise;
 	private ArrayList<int[]> possibleMoves; // List of all possible moves 
-	private boolean isLeaf; // Determines if the game is in a playable state.
+
 	private String evaluationType;
 	
 	private int upperX; // Used to test for locat symmtry
@@ -54,8 +54,7 @@ public class BoardInterface
 			this.value = 0;
 			//this.children = new ArrayList<BoardInterface>();
 			this.winner = 0;
-			//this.possibleMoves = new ArrayList<int[]>();
-			this.isLeaf = false;
+
 			this.evaluationType = "NotEvaluated";
 
 			this.upperX = -1;
@@ -102,10 +101,8 @@ public class BoardInterface
 			
 			// Derived fields
 			this.value = boardInterfaceToBeCoppied.getValue();
-			//this.children = new ArrayList<BoardInterface>(); // Do not want to copy this value, since each new board interface will have its own unique children
 			this.winner = boardInterfaceToBeCoppied.getWinner();
-			//this.possibleMoves = new ArrayList<int[]>();
-			this.isLeaf = boardInterfaceToBeCoppied.isLeaf();
+
 			this.evaluationType = boardInterfaceToBeCoppied.getEvaluationType();
 			this.upperX = boardInterfaceToBeCoppied.getUpperX();
 			this.lowerX = boardInterfaceToBeCoppied.getLowerX();
@@ -190,15 +187,11 @@ public class BoardInterface
 		{
 			// Determines if the game if still in a playable state
 			this.possibleMoves = new ArrayList<int[]>(60);
-			if((this.boardSize1 * this.boardSize2 - this.turn) == 0)
+			if(this.winner != 0)
 			{
-				this.isLeaf = true;
 				return false;
 			}
-			else if(this.isLeaf)
-			{	
-				return false;
-			}
+
 			
 			if(this.turn == 0)
 			{
@@ -218,8 +211,7 @@ public class BoardInterface
 						// Only care about adjacent squares to places already moved
 						if(this.isAdjacentSquare(i, j))
 						{
-							int[] newMove = {i, j};
-							this.possibleMoves.add(newMove);
+							this.possibleMoves.add(new int [] {i, j});
 						}
 					}
 				}
@@ -227,8 +219,9 @@ public class BoardInterface
 			return true;
 			
 		}
+		
 		/**
-		 * Checks if the given square board[i][j] is adjacent to a previous move
+		 * Checks if the given square this.board[i][j] is adjacent to a previous move
 		 * @param i
 		 * @param j
 		 * @return true if it is adjacent, false otherwise
@@ -746,7 +739,6 @@ public class BoardInterface
 						{
 							if(k == this.inARowToWin - 1)
 							{
-								this.isLeaf = true;
 								this.winner = playersCharacter;
 								return true;
 							}
@@ -757,7 +749,6 @@ public class BoardInterface
 						{
 							if(k == this.inARowToWin - 1)
 							{
-								this.isLeaf = true;
 								this.winner = playersCharacter;
 								return true;
 							}
@@ -768,7 +759,6 @@ public class BoardInterface
 						{
 							if(k == this.inARowToWin - 1)
 							{
-								this.isLeaf = true;
 								this.winner = playersCharacter;
 								return true;
 							}
@@ -779,7 +769,6 @@ public class BoardInterface
 						{
 							if(k == this.inARowToWin - 1)
 							{
-								this.isLeaf = true;
 								this.winner = playersCharacter;
 								return true;
 							}
@@ -812,27 +801,6 @@ public class BoardInterface
 		}
 		
 		
-		/**
-		 * Compares two boards to see if they are equal
-		 * 		Assumes the two boards are of the same dimensions
-		 * @param otherBoard
-		 * @return true if they are euqal, false otherwise
-		 */
-		private boolean isEquale(BoardInterface otherBoardInterface)
-		{
-			int[][] otherBoard = otherBoardInterface.getBoard();
-			for(int i = 0; i < this.boardSize1; i++)
-			{
-				for(int j = 0; j< this.boardSize2; j++)
-				{
-					if(this.board[i][j] != otherBoard[i][j])
-					{
-						return false;
-					}
-				}
-			}
-			return true;
-		}
 		
 		/**
 		 * 	Compares two boards to see if they are exactly equal, or a trivial reflection or rotation of one another
@@ -864,10 +832,6 @@ public class BoardInterface
 			boolean symY = true;
 			boolean symXeqY = true;
 			boolean symXeqNegY = true;
-			
-			
-			int zeroingX = this.lowerX;
-			int zeroingY = this.lowerY;
 			
 			
 			int maxSize = this.upperX - this.lowerX;
@@ -911,7 +875,7 @@ public class BoardInterface
 						{
 							symXeqNegY = false;
 						}
-						if(!sym90 && !sym180 && !sym270 && !symX && !symY && !symXeqY && !symXeqNegY)
+						if(!syme && !sym90 && !sym180 && !sym270 && !symX && !symY && !symXeqY && !symXeqNegY)
 						{
 							
 							return false;
@@ -984,9 +948,6 @@ public class BoardInterface
 		public int getValue() {return this.value;}
 		public void setValue(int value) {this.value = value;}
 
-		public boolean isLeaf() {return this.isLeaf;}
-		public void setIsLeaf(boolean isLeaf) {this.isLeaf = isLeaf;}
-
 		public int getWhoGoesFirst() {return whoGoesFirst;}
 		public void setWhoGoesFirst(int whoGoesFirst) {this.whoGoesFirst = whoGoesFirst;}
 
@@ -998,37 +959,17 @@ public class BoardInterface
 
 		
 
-		public int getUpperX() {
-			return this.upperX;
-		}
+		public int getUpperX() {return this.upperX;}
+		public void setUpperX(int upperX) {this.upperX = upperX;}
 
-		public void setUpperX(int upperX) {
-			this.upperX = upperX;
-		}
+		public int getLowerX() {return this.lowerX;}
+		public void setLowerX(int lowerX) {this.lowerX = lowerX;}
 
-		public int getLowerX() {
-			return this.lowerX;
-		}
+		public int getUpperY() {return this.upperY;}
+		public void setUpperY(int upperY) {this.upperY = upperY;}
 
-		public void setLowerX(int lowerX) {
-			this.lowerX = lowerX;
-		}
-
-		public int getUpperY() {
-			return this.upperY;
-		}
-
-		public void setUpperY(int upperY) {
-			this.upperY = upperY;
-		}
-
-		public int getLowerY() {
-			return this.lowerY;
-		}
-
-		public void setLowerY(int lowerY) {
-			this.lowerY = lowerY;
-		}
+		public int getLowerY() {return this.lowerY;}
+		public void setLowerY(int lowerY) {this.lowerY = lowerY;}
 
 
 

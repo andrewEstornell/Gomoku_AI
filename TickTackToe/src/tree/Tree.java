@@ -109,13 +109,13 @@ public class Tree
 		
 		int bestValue = -10000; // Worst possible value
 		ArrayList<int[]> possibleMoves = boardInterface.getPossibleMoves();
-		if(currentDepth == 0 && !shallowSearch)
+		if(currentDepth == 0)
 		{
-			possibleMoves = this.moveOrdering(possibleMoves);
+			/*possibleMoves = this.moveOrdering(possibleMoves);
 			for(int[] move: possibleMoves)
 			{
 				System.out.println(move[0] + ", " + move[1]);
-			}
+			}*/
 			this.initalMoves = possibleMoves;
 		}
 		/*
