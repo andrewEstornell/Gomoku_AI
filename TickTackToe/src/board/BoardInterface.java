@@ -22,13 +22,16 @@ public class BoardInterface
 	
 	// Derived fields 
 	private int value; // How good the given position is
-	private ArrayList<BoardInterface> children; // Board interfaces one move ahead of the current board interface
+	//private ArrayList<BoardInterface> children; // Board interfaces one move ahead of the current board interface
 	private int winner; // 1 if first player wins, 2 if second player wins, 0 otherwise;
 	private ArrayList<int[]> possibleMoves; // List of all possible moves 
 	private boolean isLeaf; // Determines if the game is in a playable state.
 	private String evaluationType;
 	
-		
+	private int upperX; // Used to test for locat symmtry
+	private int lowerX;
+	private int upperY;
+	private int lowerY;
 		
 		/**
 		 * 	Constructor for a new, i.e. first, board
@@ -49,11 +52,16 @@ public class BoardInterface
 			
 			// Derived fields
 			this.value = 0;
-			this.children = new ArrayList<BoardInterface>();
+			//this.children = new ArrayList<BoardInterface>();
 			this.winner = 0;
 			//this.possibleMoves = new ArrayList<int[]>();
 			this.isLeaf = false;
-			this.setEvaluationType("NotEvaluated");
+			this.evaluationType = "NotEvaluated";
+
+			this.upperX = -1;
+			this.lowerX = this.boardSize1;
+			this.upperY = -1;
+			this.lowerY = this.boardSize2;
 		}
 		
 		/**
@@ -94,33 +102,17 @@ public class BoardInterface
 			
 			// Derived fields
 			this.value = boardInterfaceToBeCoppied.getValue();
-			this.children = new ArrayList<BoardInterface>(); // Do not want to copy this value, since each new board interface will have its own unique children
+			//this.children = new ArrayList<BoardInterface>(); // Do not want to copy this value, since each new board interface will have its own unique children
 			this.winner = boardInterfaceToBeCoppied.getWinner();
 			//this.possibleMoves = new ArrayList<int[]>();
 			this.isLeaf = boardInterfaceToBeCoppied.isLeaf();
-			
-		}
-		/**
-		 * Creates a copy of the 2D array of bites that is the board
-		 * @param board2 2D array of bites
-		 * @return the copy of the 2D array of ints
-		 */
-		private int[][] copyBoard(int[][] board2) 
-		{
-			//return Arrays.copyOf(board2, board2.length);
-			
-			//return Arrays.stream(board2).map(int[]::clone).toArray(int[][]::new);
+			this.evaluationType = boardInterfaceToBeCoppied.getEvaluationType();
+			this.upperX = boardInterfaceToBeCoppied.getUpperX();
+			this.lowerX = boardInterfaceToBeCoppied.getLowerX();
+			this.upperY = boardInterfaceToBeCoppied.getUpperY();
+			this.lowerY = boardInterfaceToBeCoppied.getLowerY();
 			
 			
-			int[][] boardCopy = new int[this.boardSize1][this.boardSize2];
-			for(int i = 0; i < this.boardSize1; i++)
-			{
-				for(int j = 0; j < this.boardSize2; j++)
-				{
-					boardCopy[i][j] = board2[i][j];
-				}
-			}
-			return boardCopy;
 		}
 
 		/**
@@ -139,11 +131,55 @@ public class BoardInterface
 			this.turn++;
 			return true;
 		}
-		
-		public void incamentTrun()
+		/**
+		 * Updates the bound of the symmetry check based on the last valid move
+		 * @param x coordinate of last move
+		 * @param y coordinate of last move
+		 */
+		public void updateBounds(int x, int y)
 		{
-			this.turn++;
+			if(x > this.upperX)
+			{
+				this.upperX = x;
+			}
+			if(x < this.lowerX)
+			{
+				this.lowerX = x;
+			}
+			if(y > this.upperY)
+			{
+				this.upperY = y;
+			}
+			if(y < this.lowerY)
+			{
+				this.lowerY = y;
+			}
+			
+			while(this.upperX - this.lowerX > this.upperY - this.lowerY)
+			{
+				if(this.upperY < this.boardSize2 - 1)
+				{
+					upperY++;
+				}
+				else
+				{
+					this.lowerY--;
+				}
+			}
+			while(this.upperX - this.lowerX < this.upperY - this.lowerY)
+			{
+				if(this.upperX < this.boardSize1 - 1)
+				{
+					upperX++;
+				}
+				else
+				{
+					lowerX--;
+				}
+			}
+			
 		}
+		
 		
 		/**
 		 * 	Checks that the game is not over
@@ -258,10 +294,7 @@ public class BoardInterface
 			return false;
 		}
 
-		public void addChild(BoardInterface childBoardInterface)
-		{
-			this.children.add(childBoardInterface);
-		}
+
 		
 		/**
 		 * 	Checks if the game is over.	
@@ -270,7 +303,7 @@ public class BoardInterface
 		 */
 		public int evaluateBoard(int currentDepth, int maxDepth) 
 		{
-			if(this.hasWon())
+			if(this.winner != 0)
 			{
 				//this.value = heuristicEvaluation(currentDepth, maxDepth);
 				if(this.winner == ((this.whoGoesFirst % 2 ) + 1))
@@ -281,7 +314,7 @@ public class BoardInterface
 				{
 					this.value = (10000 - currentDepth);
 				}
-				else if(this.turn == this.boardSize1 * this.boardSize2)
+				else if(this.winner == -1)
 				{
 					this.value = 0; 
 					System.out.println("TIE");
@@ -294,7 +327,9 @@ public class BoardInterface
 			}
 			else
 			{
-				this.value = this.heuristicEvaluation(currentDepth, maxDepth);
+				
+				this.value = this.heuristicEvaluation5(currentDepth, maxDepth, ((this.turn + 1) % 2) + 1)
+						   - this.heuristicEvaluation5(currentDepth, maxDepth, ((this.turn % 2) + 1));
 				//System.out.println("game still in play");
 			}
 			return this.value;
@@ -306,9 +341,6 @@ public class BoardInterface
 		 */
 		public int heuristicEvaluation(int currentDepth, int maxDepth)
 		{
-			
-			
-			
 			//// ADD CHECK FOR BOTH PLAYERS THREATS/////////
 			int value = 0;
 			int player1 = (((this.turn + 1) % 2) + 1);
@@ -321,19 +353,12 @@ public class BoardInterface
 			{
 				for(int j = 0; j < this.boardSize2; j++)
 				{
-					int counterY = 0;
-					int counterX = 0;
-					int counterXeqY = 0;
-					int counterXeqNegY = 0;
+
 					if(this.board[i][j] == 0)
 					{
-						counterY = this.YinARow(i, j);
-						counterX = this.XinARow(i, j);
-						counterXeqY = this.XeqYinARow(i, j);
-						counterXeqNegY = this.XeqNegYinARow(i, j);
 						
-						value += counterY + counterX + counterXeqY + counterXeqNegY;
-						
+						value += this.YinARow(i, j, player1) - this.YinARow(i, j, player2) + this.XinARow(i, j, player1) - this.XinARow(i, j, player2) 
+							   + this.XeqYinARow(i, j, player1) - this.XeqYinARow(i, j, player2) + this.XeqNegYinARow(i, j, player1) - this.XeqNegYinARow(i, j, player2);
 						
 						
 					}
@@ -347,11 +372,219 @@ public class BoardInterface
 			//System.out.println("H value:^^ " + value);
 			return value;
 		}
+
 		
-		private int YinARow(int i, int j)
+		private int heuristicEvaluation5(int currentDepth, int maxDepth, int player)
+		{	
+			
+			int value = 0;
+			// Check for non boundary threats
+			for(int i = 1; i < this.boardSize1 - 1; i++)
+			{
+				for(int j = 1; j < this.boardSize1 - 1; j++)
+				{
+					if(this.board[i][j] == player)
+					{
+						if(this.board[i - 1][j] == 0 && this.board[i + 1][j] == player)
+						{
+							value++;
+							for(int k = 2; k < this.inARowToWin; k++)
+							{
+								if(i + k < this.boardSize1)
+								{
+									if(this.board[i + k][j] == player)
+									{
+										value++;
+									}
+									if(this.board[i + k][j] == 0)
+									{
+										value++;
+										break;
+									}
+									else
+									{
+										break;
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						else if(this.board[i + 1][j] == 0 && this.board[i - 1][j] == player)
+						{
+							value++;
+							for(int k = 2; k < this.inARowToWin; k++)
+							{
+								if(i - k > -1)
+								{
+									if(this.board[i - k][j] == player)
+									{
+										value++;
+									}
+									else if(this.board[i - k][j] == 0)
+									{
+										value++;
+										break;
+									}
+									else
+									{
+										break;
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						if(this.board[i][j - 1] == 0 && this.board[i][ j + 1] == player)
+						{
+							value++;
+							for(int k = 2; k < this.inARowToWin; k++)
+							{
+								if(j + k < this.boardSize2)
+								{
+									if(this.board[i][j + k] == player)
+									{
+										value++;
+									}
+									else if(this.board[i][j + k] == 0)
+									{
+										value++;
+										break;
+									}
+									else
+									{
+										break;
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						else if(this.board[i][j + 1] == 0 && this.board[i][j - 1] == player)
+						{
+							value++;
+							for(int k = 2; k < this.inARowToWin; k++)
+							{
+								if(j - k > -1)
+								{
+									if(this.board[i][j - k] == player)
+									{
+										value++;
+									}
+									else if(this.board[i][j - k] == 0)
+									{
+										value++;
+										break;
+									}
+									else
+									{
+										break;
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						if(this.board[i - 1][j - 1] == 0 && this.board[i + 1][j + 1] == player)
+						{
+							value++;
+							for(int k = 2; k < this.inARowToWin; k++)
+							{
+								if(i + k < this.boardSize1 && j + k < this.boardSize2)
+								{
+									if(this.board[i + k][j + k] == player)
+									{
+										value++;
+									}
+									else if(this.board[i + k][j + k] == 0)
+									{
+										value++;
+										break;
+									}
+									else
+									{
+										break;
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						else if(this.board[i + 1][j + 1] == 0 && this.board[i - 1][j - 1] == player)
+						{
+							value++;
+							for(int k = 2; k < this.inARowToWin; k++)
+							{
+								if(i - k > -1 && j - k > -1)
+								{
+									if(this.board[i - k][j - k] == player)
+									{
+										value++;
+									}
+									else if(this.board[i - k][j - k] == 0)
+									{
+										value++;
+										break;
+									}
+									else
+									{
+										break;
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						if(this.board[i -1][j + 1] == 0 && this.board[i + 1][j - 1] == player)
+						{
+							value++;
+							for(int k = 2; k < this.inARowToWin; k++)
+							{
+								if(i + k < this.boardSize1 && j - k > -1)
+								{
+									if(this.board[i + k][j - k] == player)
+									{
+										value++;
+									}
+									else if(this.board[i + k][j - k] == 0)
+									{
+										value++;
+										break;
+									}
+									else
+									{
+										break;
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						
+					}
+				}
+			}
+			
+			return value;
+		}
+		
+		private int YinARow(int i, int j, int player)
 		{
-			int player1 = (((this.turn + 1) % 2) + 1);
-			int player2 = (((this.turn + 1) % 2) + 1);
+			int player1 = player;
 			
 			int counterY = 0;
 			
@@ -378,12 +611,16 @@ public class BoardInterface
 					break;
 				}
 			}
-			return counterY;
+			if(counterY > 1)
+			{
+				return counterY;
+			}
+			
+			return 0;
 		}
-		private int XinARow(int i, int j)
+		private int XinARow(int i, int j, int player)
 		{
-			int player1 = (((this.turn + 1) % 2) + 1);
-			int player2 = (((this.turn + 1) % 2) + 1);
+			int player1 = player;
 			
 			int counterY = 0;
 			
@@ -410,13 +647,15 @@ public class BoardInterface
 					break;
 				}
 			}
-			
-			return counterY;
+			if(counterY > 1)
+			{
+				return counterY;
+			}
+			return 0;
 		}
-		private int XeqYinARow(int i, int j)
+		private int XeqYinARow(int i, int j, int player)
 		{	
-			int player1 = (((this.turn + 1) % 2) + 1);
-			int player2 = (((this.turn + 1) % 2) + 1);
+			int player1 = player;
 		
 			int counterXeqY = 0;
 			for(int k = 1; k < this.inARowToWin; k++)
@@ -442,12 +681,15 @@ public class BoardInterface
 					break;
 				}
 			}
-			return counterXeqY;
+			if(counterXeqY > 1)
+			{
+				return counterXeqY;
+			}
+			return 0;
 		}
-		private int XeqNegYinARow(int i, int j)
+		private int XeqNegYinARow(int i, int j, int player)
 		{
-			int player1 = (((this.turn) % 2) + 1);
-			int player2 = (((this.turn + 1)% 2) + 1);
+			int player1 = player;
 			
 			int counterXeqNegY = 0;
 			for(int k = 1; k < this.inARowToWin; k++)
@@ -473,8 +715,11 @@ public class BoardInterface
 					break;
 				}
 			}
-			
-			return counterXeqNegY;
+			if(counterXeqNegY > 1)
+			{
+				return counterXeqNegY;
+			}
+			return 0;
 		}
 		
 		
@@ -543,6 +788,11 @@ public class BoardInterface
 					}
 				}
 			}
+			if(this.turn == this.boardSize1 * this.boardSize2)
+			{
+				this.winner = -1;
+				return true;
+			}
 			return false;
 		}
 		
@@ -587,20 +837,25 @@ public class BoardInterface
 		/**
 		 * 	Compares two boards to see if they are exactly equal, or a trivial reflection or rotation of one another
 		 * @param otherBoardInterface
-		 * @return true if they are euqal up to symmetry, false otherwise
+		 * @return true if they are equal up to symmetry, false otherwise
 		 */
 		public boolean isEqualUpToSymmetry(BoardInterface otherBoardInterface)
 		{
 		
 			int[][] otherBoard = otherBoardInterface.getBoard();
-			if(this.isEquale(otherBoardInterface))
+			
+			int otherUpperX = otherBoardInterface.getUpperX();
+			int otherLowerX = otherBoardInterface.getLowerX();
+			int otherUpperY = otherBoardInterface.getUpperY();
+			int otherLowerY = otherBoardInterface.getLowerY();
+			
+			if(this.upperX - this.lowerX != otherUpperX - otherLowerX || this.upperY - this.lowerY != otherUpperY - otherLowerY)
 			{
-				return true;
+				return false;
 			}
-			
-			
 			// Used to test if boards are equal up to symmetries of rectangles
 			// Rotations
+			boolean syme = true;
 			boolean sym90 = true;
 			boolean sym180 = true;
 			boolean sym270 = true;
@@ -610,43 +865,55 @@ public class BoardInterface
 			boolean symXeqY = true;
 			boolean symXeqNegY = true;
 			
+			
+			int zeroingX = this.lowerX;
+			int zeroingY = this.lowerY;
+			
+			
+			int maxSize = this.upperX - this.lowerX;
+			
+			
 			if(this.boardSize1 == this.boardSize2)
 			{
-				
-				for(int i = 0; i < this.boardSize1; i++)
+				for(int i = 0; i <= maxSize; i++)
 				{
-					for(int j = 0; j < this.boardSize2; j++)
+					for(int j = 0; j <= maxSize; j++)
 					{
-						if(this.board[i][j] != otherBoard[this.boardSize1 - 1 - j][i])
+						if(this.board[i + this.lowerX][j + this.lowerY] != otherBoard[i + otherLowerX][j + otherLowerY])
+						{
+							syme = false;
+						}
+						if(this.board[i + this.lowerX][j + this.lowerY] != otherBoard[otherUpperY - j][i + otherLowerX])
 						{
 							sym90 = false;
 						}
-						if(this.board[i][j] != otherBoard[this.boardSize1 - 1 - i][this.boardSize1 - 1 - j])
+						if(this.board[i + this.lowerX][j + this.lowerY] != otherBoard[otherUpperX - i][otherUpperY - j])
 						{
 							sym180 = false;
 						}
-						if(this.board[i][j] != otherBoard[j][this.boardSize2 - 1 - i])
+						if(this.board[i + this.lowerX][j + this.lowerY] != otherBoard[j + otherLowerY][otherUpperX - i])
 						{
 							sym270 = false;
 						}
-						if(this.board[i][j] != otherBoard[this.boardSize1 - 1- i][j])
+						if(this.board[i + this.lowerX][j + this.lowerY] != otherBoard[otherUpperX - i][j + otherLowerY])
 						{
 							symX = false;
 						}
-						if(this.board[i][j] != otherBoard[i][this.boardSize2 - 1 - j])
+						if(this.board[i + this.lowerX][j + this.lowerY] != otherBoard[i + otherLowerX][otherUpperY - j])
 						{
 							symY = false;
 						}
-						if(this.board[i][j] != otherBoard[j][i])
+						if(this.board[i + this.lowerX][j + this.lowerY] != otherBoard[j + otherLowerY][i + otherLowerX])
 						{
 							symXeqY = false;
 						}
-						if(this.board[i][j] != otherBoard[this.boardSize1 - 1 - j][this.boardSize2 - 1 - i])
+						if(this.board[i + this.lowerX][j + this.lowerY] != otherBoard[otherUpperY - j][otherUpperX - i])
 						{
 							symXeqNegY = false;
 						}
 						if(!sym90 && !sym180 && !sym270 && !symX && !symY && !symXeqY && !symXeqNegY)
 						{
+							
 							return false;
 						}
 					}
@@ -705,8 +972,8 @@ public class BoardInterface
 		public int getTurn() {return this.turn;}
 		public void setTurn(int turn) {this.turn = turn;}
 		
-		public ArrayList<BoardInterface> getChildren() {return this.children;}
-		public void setChildren(ArrayList<BoardInterface> children) {this.children = children;}
+		//public ArrayList<BoardInterface> getChildren() {return this.children;}
+		//public void setChildren(ArrayList<BoardInterface> children) {this.children = children;}
 		
 		public void setPossibleMoves(ArrayList<int[]> possibleMoves) {this.possibleMoves = possibleMoves;}
 		public ArrayList<int[]> getPossibleMoves() { return this.possibleMoves;}
@@ -723,12 +990,44 @@ public class BoardInterface
 		public int getWhoGoesFirst() {return whoGoesFirst;}
 		public void setWhoGoesFirst(int whoGoesFirst) {this.whoGoesFirst = whoGoesFirst;}
 
-		public String getEvaluationType() {
-			return evaluationType;
-		}
+		public String getEvaluationType() {return this.evaluationType;}
 
 		public void setEvaluationType(String evaluationType) {
 			this.evaluationType = evaluationType;
+		}
+
+		
+
+		public int getUpperX() {
+			return this.upperX;
+		}
+
+		public void setUpperX(int upperX) {
+			this.upperX = upperX;
+		}
+
+		public int getLowerX() {
+			return this.lowerX;
+		}
+
+		public void setLowerX(int lowerX) {
+			this.lowerX = lowerX;
+		}
+
+		public int getUpperY() {
+			return this.upperY;
+		}
+
+		public void setUpperY(int upperY) {
+			this.upperY = upperY;
+		}
+
+		public int getLowerY() {
+			return this.lowerY;
+		}
+
+		public void setLowerY(int lowerY) {
+			this.lowerY = lowerY;
 		}
 
 

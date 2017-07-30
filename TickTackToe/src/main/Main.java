@@ -28,6 +28,8 @@ public class Main
 		int whoGoesFirst = scan.nextInt();
 		boardInterface = new BoardInterface(boardSize1, boardSize2, inARowToWin, whoGoesFirst);
 		
+		scan.close();
+		
 		gui = new GUI(boardSize1, boardSize2);
 		buttons = gui.getButtons();
 		
@@ -56,6 +58,7 @@ public class Main
 					System.out.print("Move y: ");
 					y = scan.nextInt();*/
 				}
+				boardInterface.updateBounds(x, y);
 				buttons[x][y].iconSetting(x, y);
 				System.out.println("userMove made"); // Debug
 			}
@@ -66,6 +69,7 @@ public class Main
 				int[] AImove = tree.getBestMove2();
 				System.out.println("AI move generated"); // Debug
 				boardInterface.makeMove(AImove[0], AImove[1]);
+				boardInterface.updateBounds(AImove[0], AImove[1]);
 				System.out.println("AI move made"); // Debug
 				Main.buttons[AImove[0]][AImove[1]].iconSetting(AImove[0], AImove[1]);
 			}
@@ -96,6 +100,8 @@ public class Main
 			x = scan.nextInt();
 			System.out.print("y: ");
 			y = scan.nextInt();
+			
+			scan.close();
 		}
 	}
 	
