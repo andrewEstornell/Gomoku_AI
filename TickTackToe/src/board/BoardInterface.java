@@ -2,6 +2,7 @@ package board;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 
 //-XX:+UseConcMarkSweepGC -XX:+UseParNewGC
@@ -26,7 +27,7 @@ public class BoardInterface
 	private int winner; // 1 if first player wins, 2 if second player wins, 0 otherwise;
 	private ArrayList<int[]> possibleMoves; // List of all possible moves 
 
-	private String evaluationType;
+	private int evaluationType;
 	
 	private int upperX; // Used to test for locat symmtry
 	private int lowerX;
@@ -55,7 +56,7 @@ public class BoardInterface
 			//this.children = new ArrayList<BoardInterface>();
 			this.winner = 0;
 
-			this.evaluationType = "NotEvaluated";
+			this.evaluationType = -2;
 
 			this.upperX = -1;
 			this.lowerX = this.boardSize1;
@@ -183,23 +184,10 @@ public class BoardInterface
 		 * 	Stores all possible moves
 		 * @return false if there are no possibleMoves, true if possible moves were generated correctly
 		 */
-		public boolean isPlayable()
+		public void generatePossibleMoves()
 		{
 			// Determines if the game if still in a playable state
-			this.possibleMoves = new ArrayList<int[]>(60);
-			if(this.winner != 0)
-			{
-				return false;
-			}
-
-			
-			if(this.turn == 0)
-			{
-				int[] newMove = {(this.boardSize1/2),  (this.boardSize2/2)}; 
-				this.possibleMoves.add(newMove);
-				return true;
-			}
-			
+			this.possibleMoves = new ArrayList<int[]>(30);
 			
 			// Generates a list of possible moves based on empty board spaces
 			for(int i = 0; i < this.boardSize1; i++)
@@ -216,9 +204,63 @@ public class BoardInterface
 					}
 				}
 			}
-			return true;
-			
 		}
+		
+		
+		public void generateOrderedMoves()
+		{
+			ArrayList<Integer> moveValues = new ArrayList<Integer>(30);
+			this.possibleMoves = new ArrayList<int[]>(30);
+			
+			for(int i = 0; i < this.boardSize1; i++)
+			{
+				for(int j = 0; j < this.boardSize2; j++)
+				{
+					if(this.board[i][j] == 0)
+					{
+						if(this.isAdjacentForOrdredMoves(i, j, moveValues))
+						{
+							this.possibleMoves.add(new int[] {i, j});
+						}
+					}
+				}
+			}
+			int length = this.possibleMoves.size();
+			
+			for(int i = length -1; i >= 0; i--)
+			{
+				int initalValue = moveValues.get(i);
+				for(int j = i - 1; j >= 0; j--)
+				{
+					if(initalValue > moveValues.get(j))
+					{
+						Collections.swap(moveValues, j, j + 1);
+						Collections.swap(this.possibleMoves, j, j + 1);
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+			
+			
+		    for(int i = 0; i < moveValues.size(); i++)
+		    {
+		    	//System.out.print("| [" + this.possibleMoves.get(i)[0] + ", " + this.possibleMoves.get(i)[1] + "]  ");
+		    	//System.out.print(moveValues.get(i) + "|, ");
+		    }
+		    //System.out.println();
+		}
+		
+		public void generateTrunZeroMove()
+		{
+			int[] newMove = new int[2];
+			newMove[0] = this.boardSize1 / 2;
+			newMove[1] = this.boardSize2 / 2;
+			this.possibleMoves.add(newMove);
+		}
+		
 		
 		/**
 		 * Checks if the given square this.board[i][j] is adjacent to a previous move
@@ -286,6 +328,275 @@ public class BoardInterface
 			}
 			return false;
 		}
+		
+		private boolean isAdjacentForOrdredMoves(int i, int j, ArrayList<Integer> moveValues)
+		{
+			int value = 0;
+			if(i + 1 < this.boardSize1)
+			{
+				if(this.board[i + 1][j] != 0)
+				{
+					value++;
+					for(int k = 2; k < this.inARowToWin; k++)
+					{
+						if(i + k < this.boardSize1)
+						{
+							if(this.board[i + k][j] == 0)
+							{
+								value += (2 * k);
+								break;
+							}
+							if(this.board[i + k][j] != this.board[i + 1][j])
+							{
+								value -= (2 * k);
+								break;
+							}
+							else
+							{
+								value += (2 * k);
+							}
+						}
+						else
+						{
+							value -= (3 * k);
+							break;
+						}
+					}
+				}
+				if(j + 1 < this.boardSize2)
+				{
+					if(this.board[i + 1][j + 1] != 0)
+					{
+						value++;
+						for(int k = 2; k < this.inARowToWin; k++)
+						{
+							if(i + k < this.boardSize1 && j + k < this.boardSize2)
+							{
+								if(this.board[i + k][j + k] == 0)
+								{
+									value += (2 * k);
+									break;
+								}
+								if(this.board[i + k][j + k] != this.board[i + 1][j + 1])
+								{
+									value -= (2 * k);
+									break;
+								}
+								else
+								{
+									value += (2 * k);
+								}
+							}
+							else
+							{
+								value -= (3 * k);
+								break;
+							}
+						}
+					}
+				}
+				if(j - 1 >= 0)
+				{
+					if(this.board[i + 1][j - 1] != 0)
+					{
+						value++;
+						for(int k = 2; k < this.inARowToWin; k++)
+						{
+							if(i + k < this.boardSize1 && j - k > -1)
+							{
+								if(this.board[i + k][j - k] == 0)
+								{
+									value += (2 * k);
+									break;
+								}
+								if(this.board[i + k][j - k] != this.board[i + 1][j - 1])
+								{
+									value -= (2 * k);
+									break;
+								}
+								else
+								{
+									value += (2 * k);
+								}
+							}
+							else
+							{
+								value -= (3 * k);
+								break;
+							}
+						}
+					}
+				}
+			}
+			if(i - 1 >= 0)
+			{
+				if(this.board[i - 1][j] != 0)
+				{
+					value++;
+					for(int k = 2; k < this.inARowToWin; k++)
+					{
+						if(i - k > -1)
+						{
+							if(this.board[i - k][j] == 0)
+							{
+								value += (2 * k);
+								break;
+							}
+							if(this.board[i - k][j] != this.board[i - 1][j])
+							{
+								value -= (2 * k);
+								break;
+							}
+							else
+							{
+								value += (2 * k);
+							}
+						}
+						else
+						{
+							value -= (3 * k);
+							break;
+						}
+					}
+				}
+				if(j + 1 < this.boardSize2)
+				{
+					if(this.board[i - 1][j + 1] != 0)
+					{
+						value++;
+						for(int k = 2; k < this.inARowToWin; k++)
+						{
+							if(i - k > -1 && j + k < this.boardSize2)
+							{
+								if(this.board[i - k][j + k] == 0)
+								{
+									value += (2 * k);
+									break;
+								}
+								if(this.board[i - k][j + k] != this.board[i - 1][j + k])
+								{
+									value -= (2 * k);
+									break;
+								}
+								else
+								{
+									value += (2 * k);
+								}
+							}
+							else
+							{
+								value -= (3 * k);
+								break;
+							}
+						}
+					}
+				}
+				if(j - 1 >= 0)
+				{
+					if(this.board[i - 1][j - 1] != 0)
+					{
+						value++;
+						for(int k = 2; k < this.inARowToWin; k++)
+						{
+							if(i - k > -1 && j - k > -1)
+							{
+								if(this.board[i - k][j - k] == 0)
+								{
+									value += (2 * k);
+									break;
+								}
+								if(this.board[i - k][j - k] != this.board[i - 1][j - 1])
+								{
+									value -= (2 * k);
+									break;
+								}
+								else
+								{
+									value += (2 * k);
+								}
+							}
+							else
+							{
+								value -= (3 * k);
+								break;
+							}
+						}
+					}
+				}
+			}
+			if(j - 1 >= 0)
+			{
+				if(this.board[i][j - 1] !=0)
+				{
+					value++;
+					for(int k = 2; k < this.inARowToWin; k++)
+					{
+						if(j - k > -1)
+						{
+							if(this.board[i][j - k] == 0)
+							{
+								value += (2 * k);
+								break;
+							}
+							if(this.board[i][j - k] != this.board[i][j - 1])
+							{
+								value -= (2 * k);
+								break;
+							}
+							else
+							{
+								value += (2 * k);
+							}
+						}
+						else
+						{
+							value -= (3 * k);
+							break;
+						}
+					}
+				}
+			}
+			if(j + 1 < this.boardSize2)
+			{
+				if(this.board[i][j + 1] != 0)
+				{
+					value++;
+					for(int k = 2; k < this.inARowToWin; k++)
+					{
+						if(j + k < this.boardSize2)
+						{
+							if(this.board[i][j + k] == 0)
+							{
+								value += (2 * k);
+								break;
+							}
+							if(this.board[i][j + k] != this.board[i][j + 1])
+							{
+								value -= (2 * k);
+								break;
+							}
+							else
+							{
+								value += (2 * k);
+							}
+						}
+						else
+						{
+							value -= (3 * k);
+							break;
+						}
+					}
+				}
+			}
+			
+			if(value > 0)
+			{
+				moveValues.add(value);
+				//System.out.println(i + " " + j);
+				return true;
+			}
+			return false;
+		}
 
 
 		
@@ -320,9 +631,11 @@ public class BoardInterface
 			}
 			else
 			{
+				//((this.turn + 1) % 2) + 1
+				//((this.turn % 2) + 1
 				
-				this.value = this.heuristicEvaluation5(currentDepth, maxDepth, ((this.turn + 1) % 2) + 1)
-						   - this.heuristicEvaluation5(currentDepth, maxDepth, ((this.turn % 2) + 1));
+				this.value = this.heuristicEvaluation((((this.whoGoesFirst + 1) % 2) + 1));
+				//System.out.println("Value: " + this.value);
 				//System.out.println("game still in play");
 			}
 			return this.value;
@@ -332,237 +645,254 @@ public class BoardInterface
 		 * Need a way to evaluate boards that are not yet won or lost when we reach max depth
 		 * @return a heuristic evaluation of the given leaf board
 		 */
-		public int heuristicEvaluation(int currentDepth, int maxDepth)
+		public int heuristicEvaluation(int player1)
 		{
-			//// ADD CHECK FOR BOTH PLAYERS THREATS/////////
 			int value = 0;
-			int player1 = (((this.turn + 1) % 2) + 1);
-			int player2 = ((this.turn % 2) + 1);
-			
-			
-			
-			// Diamond structure
-			for(int i = 0; i < this.boardSize1; i++)
-			{
-				for(int j = 0; j < this.boardSize2; j++)
-				{
-
-					if(this.board[i][j] == 0)
-					{
-						
-						value += this.YinARow(i, j, player1) - this.YinARow(i, j, player2) + this.XinARow(i, j, player1) - this.XinARow(i, j, player2) 
-							   + this.XeqYinARow(i, j, player1) - this.XeqYinARow(i, j, player2) + this.XeqNegYinARow(i, j, player1) - this.XeqNegYinARow(i, j, player2);
-						
-						
-					}
-				}
-			}
-			if(((this.whoGoesFirst) % 2) == (this.turn) % 2)
-			{
-				value = value * (-1);
-			}
-			//this.displayBoard();
-			//System.out.println("H value:^^ " + value);
-			return value;
-		}
-
-		
-		private int heuristicEvaluation5(int currentDepth, int maxDepth, int player)
-		{	
-			
-			int value = 0;
+			int scalar = 1;
 			// Check for non boundary threats
 			for(int i = 1; i < this.boardSize1 - 1; i++)
 			{
 				for(int j = 1; j < this.boardSize1 - 1; j++)
 				{
-					if(this.board[i][j] == player)
+					if(this.board[i][j] != 0)
 					{
-						if(this.board[i - 1][j] == 0 && this.board[i + 1][j] == player)
+						if(this.board[i][j] == player1)
 						{
-							value++;
+							scalar = 1;
+						}
+						else
+						{
+							scalar = -1;
+						}
+						if(this.board[i - 1][j] == 0 && this.board[i + 1][j] == this.board[i][j])
+						{
+							value += scalar;
 							for(int k = 2; k < this.inARowToWin; k++)
 							{
+								//System.out.println("k: " + k);
 								if(i + k < this.boardSize1)
 								{
-									if(this.board[i + k][j] == player)
+									if(this.board[i + k][j] == this.board[i][j])
 									{
-										value++;
+										value += (scalar * (2 * k));
 									}
 									if(this.board[i + k][j] == 0)
 									{
-										value++;
+										value += (scalar * (2 * k));
 										break;
 									}
 									else
 									{
+										value -= (scalar * (3 * k));
 										break;
 									}
 								}
 								else
 								{
+									value -=(scalar * (2 * k));
 									break;
 								}
 							}
 						}
-						else if(this.board[i + 1][j] == 0 && this.board[i - 1][j] == player)
+						else if(this.board[i + 1][j] == 0 && this.board[i - 1][j] == this.board[i][j])
 						{
-							value++;
+							value += scalar;
 							for(int k = 2; k < this.inARowToWin; k++)
 							{
 								if(i - k > -1)
 								{
-									if(this.board[i - k][j] == player)
+									if(this.board[i - k][j] == this.board[i][j])
 									{
-										value++;
+										value += (scalar * (2 * k));
 									}
 									else if(this.board[i - k][j] == 0)
 									{
-										value++;
+										value += (scalar *(2 * k));
 										break;
 									}
 									else
 									{
+										value -= (scalar * (3 * k));
 										break;
 									}
 								}
 								else
 								{
+									value -= (scalar * (2 * k));
 									break;
 								}
 							}
 						}
-						if(this.board[i][j - 1] == 0 && this.board[i][ j + 1] == player)
+						if(this.board[i][j - 1] == 0 && this.board[i][ j + 1] == this.board[i][j])
 						{
-							value++;
+							value += scalar;
 							for(int k = 2; k < this.inARowToWin; k++)
 							{
 								if(j + k < this.boardSize2)
 								{
-									if(this.board[i][j + k] == player)
+									if(this.board[i][j + k] == this.board[i][j])
 									{
-										value++;
+										value += (scalar * (2 * k));
 									}
 									else if(this.board[i][j + k] == 0)
 									{
-										value++;
+										value += (scalar * (2 * k));
 										break;
 									}
 									else
 									{
+										value -= (scalar * (3 * k));
 										break;
 									}
 								}
 								else
 								{
+									value -= (scalar * (2 * k));
 									break;
 								}
 							}
 						}
-						else if(this.board[i][j + 1] == 0 && this.board[i][j - 1] == player)
+						else if(this.board[i][j + 1] == 0 && this.board[i][j - 1] == this.board[i][j])
 						{
-							value++;
+							value += scalar;
 							for(int k = 2; k < this.inARowToWin; k++)
 							{
 								if(j - k > -1)
 								{
-									if(this.board[i][j - k] == player)
+									if(this.board[i][j - k] == this.board[i][j])
 									{
-										value++;
+										value += (scalar * (2 * k));
 									}
 									else if(this.board[i][j - k] == 0)
 									{
-										value++;
+										value += (scalar * (2 * k));
 										break;
 									}
 									else
 									{
+										value -= (scalar * (3 * k));
 										break;
 									}
 								}
 								else
 								{
+									value -= (scalar * (2 * k));
 									break;
 								}
 							}
 						}
-						if(this.board[i - 1][j - 1] == 0 && this.board[i + 1][j + 1] == player)
+						if(this.board[i - 1][j - 1] == 0 && this.board[i + 1][j + 1] == this.board[i][j])
 						{
-							value++;
+							value += scalar;
 							for(int k = 2; k < this.inARowToWin; k++)
 							{
 								if(i + k < this.boardSize1 && j + k < this.boardSize2)
 								{
-									if(this.board[i + k][j + k] == player)
+									if(this.board[i + k][j + k] == this.board[i][j])
 									{
-										value++;
+										value += (scalar * (2 * k));
 									}
 									else if(this.board[i + k][j + k] == 0)
 									{
-										value++;
+										value += (scalar * (2 * k));
 										break;
 									}
 									else
 									{
+										value -= (scalar * (3 * k));
 										break;
 									}
 								}
 								else
 								{
+									value -= (scalar * (2 * k));
 									break;
 								}
 							}
 						}
-						else if(this.board[i + 1][j + 1] == 0 && this.board[i - 1][j - 1] == player)
+						else if(this.board[i + 1][j + 1] == 0 && this.board[i - 1][j - 1] == this.board[i][j])
 						{
 							value++;
 							for(int k = 2; k < this.inARowToWin; k++)
 							{
 								if(i - k > -1 && j - k > -1)
 								{
-									if(this.board[i - k][j - k] == player)
+									if(this.board[i - k][j - k] == this.board[i][j])
 									{
-										value++;
+										value += (scalar * (2 * k));
 									}
 									else if(this.board[i - k][j - k] == 0)
 									{
-										value++;
+										value += (scalar * (2 * k));
 										break;
 									}
 									else
 									{
+										value -= (scalar * (3 * k));
 										break;
 									}
 								}
 								else
 								{
+									value -= (scalar * (2 * k));
 									break;
 								}
 							}
 						}
-						if(this.board[i -1][j + 1] == 0 && this.board[i + 1][j - 1] == player)
+						if(this.board[i -1][j + 1] == 0 && this.board[i + 1][j - 1] == this.board[i][j])
 						{
-							value++;
+							value += scalar;
 							for(int k = 2; k < this.inARowToWin; k++)
 							{
 								if(i + k < this.boardSize1 && j - k > -1)
 								{
-									if(this.board[i + k][j - k] == player)
+									if(this.board[i + k][j - k] == this.board[i][j])
 									{
-										value++;
+										value += (scalar * (2 * k));
 									}
 									else if(this.board[i + k][j - k] == 0)
 									{
-										value++;
+										value += (scalar * (2 * k));
 										break;
 									}
 									else
 									{
+										value -= (scalar * (3 * k));
 										break;
 									}
 								}
 								else
 								{
+									value -= (scalar * (2 * k));
+									break;
+								}
+							}
+						}
+						else if(this.board[i + 1][j -1] == 0 && this.board[i - 1][j + 1] == this.board[i][j])
+						{
+							value += scalar;
+							for(int k = 2; k < this.inARowToWin; k++)
+							{
+								if(i - k > -1 && j + k < this.boardSize2)
+								{
+									if(this.board[i - k][j + k] == this.board[i][j])
+									{
+										value += (scalar * (2 * k));
+									}
+									else if(this.board[i - k][j + k] == 0)
+									{
+										value += (scalar * (2 * k));
+										break;
+									}
+									else
+									{
+										value -= (scalar * (3 * k));
+										break;
+									}
+								}
+								else
+								{
+									value -= (scalar * (2 * k));
 									break;
 								}
 							}
@@ -574,147 +904,9 @@ public class BoardInterface
 			
 			return value;
 		}
+
 		
-		private int YinARow(int i, int j, int player)
-		{
-			int player1 = player;
-			
-			int counterY = 0;
-			
-			for(int k = 1; k < this.inARowToWin; k++)
-			{
-				if(i + k < this.boardSize1)
-				{
-					if(this.board[i + k][j] == player1)
-					{
-						counterY++;
-					}
-					else if(this.board[i + k][j] == 0)
-					{
-						counterY++;
-						break;
-					}
-					else
-					{
-						break;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-			if(counterY > 1)
-			{
-				return counterY;
-			}
-			
-			return 0;
-		}
-		private int XinARow(int i, int j, int player)
-		{
-			int player1 = player;
-			
-			int counterY = 0;
-			
-			for(int k = 1; k < this.inARowToWin; k++)
-			{
-				if(j + k < this.boardSize2)
-				{
-					if(this.board[i][j + k] == player1)
-					{
-						counterY++;
-					}
-					else if(this.board[i][j + k] == 0)
-					{
-						counterY++;
-						break;
-					}
-					else
-					{
-						break;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-			if(counterY > 1)
-			{
-				return counterY;
-			}
-			return 0;
-		}
-		private int XeqYinARow(int i, int j, int player)
-		{	
-			int player1 = player;
-		
-			int counterXeqY = 0;
-			for(int k = 1; k < this.inARowToWin; k++)
-			{
-				if(i + k < this.boardSize2 && j - k > -1)
-				{
-					if(this.board[i + k][j - k] == player1)
-					{
-						counterXeqY++;
-					}
-					else if(this.board[i + k][j - k] == 0)
-					{
-						counterXeqY++;
-						break;
-					}
-					else
-					{
-						break;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-			if(counterXeqY > 1)
-			{
-				return counterXeqY;
-			}
-			return 0;
-		}
-		private int XeqNegYinARow(int i, int j, int player)
-		{
-			int player1 = player;
-			
-			int counterXeqNegY = 0;
-			for(int k = 1; k < this.inARowToWin; k++)
-			{
-				if(i + k < this.boardSize1 && j + k < this.boardSize2)
-				{
-					if(this.board[i + k][j + k] == player1)
-					{
-						counterXeqNegY ++;
-					}
-					else if(this.board[i + k][j + k] == 0)
-					{
-						counterXeqNegY++;
-						break;
-					}
-					else
-					{
-						break;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-			if(counterXeqNegY > 1)
-			{
-				return counterXeqNegY;
-			}
-			return 0;
-		}
-		
+	
 		
 		/**
 		 * 	checks for three in a row, four different ways,  starting at board[0][0] 
@@ -951,13 +1143,8 @@ public class BoardInterface
 		public int getWhoGoesFirst() {return whoGoesFirst;}
 		public void setWhoGoesFirst(int whoGoesFirst) {this.whoGoesFirst = whoGoesFirst;}
 
-		public String getEvaluationType() {return this.evaluationType;}
-
-		public void setEvaluationType(String evaluationType) {
-			this.evaluationType = evaluationType;
-		}
-
-		
+		public int getEvaluationType() {return this.evaluationType;}
+		public void setEvaluationType(int evaluationType) {this.evaluationType = evaluationType;}
 
 		public int getUpperX() {return this.upperX;}
 		public void setUpperX(int upperX) {this.upperX = upperX;}
