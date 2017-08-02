@@ -573,6 +573,7 @@ public class BoardInterface
 							if(this.board[i][j + k] != this.board[i][j + 1])
 							{
 								value -= (3 * k);
+								
 								break;
 							}
 							else
