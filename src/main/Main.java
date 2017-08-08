@@ -91,14 +91,9 @@ public class Main
 	{
 		ExecutorService executor = Executors.newFixedThreadPool(parallelismLevel);
 		ArrayList<Future<MoveWrapper>> results = new ArrayList<Future<MoveWrapper>>();
+		// Maybe use generatePossibleMoves() here instead?
 		possibleBoardInterface.generateOrderedMoves();
-		ArrayList<BoardInterface> possibleBoards = new ArrayList<>();
-		for(int[] move: possibleBoardInterface.getPossibleMoves())
-		{
-			BoardInterface tempBoard = new BoardInterface(possibleBoardInterface);
-			tempBoard.makeMove(move[0], move[1]);
-			possibleBoards.add(tempBoard);
-		}
+		
 		// Create a Callable for each possible moves
 		for(int[] work: possibleBoardInterface.getPossibleMoves())
 		{
@@ -106,6 +101,7 @@ public class Main
 			{
 					Tree tree = new Tree(new BoardInterface(possibleBoardInterface), work);
 					numberOfGeneratedBoards.compareAndSet(numberOfGeneratedBoards.get(), numberOfGeneratedBoards.get() + tree.getNumberOfGeneratedBoards());
+					//System.out.println(tree.getBestMoveWrapper().toString());
 					return tree.getBestMoveWrapper();
 				
 			};
@@ -128,6 +124,7 @@ public class Main
 		{
 			if (move.getValue() > bestMove.getValue())
 			{
+				//System.out.println(move.getValue());
 				bestMove = move;
 			}
 		}

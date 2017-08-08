@@ -126,7 +126,7 @@ public class BoardInterface
 			{
 				return false;
 			}
-			this.board[x][y] =  ((this.turn % 2) + 1);
+			this.board[x][y] = ((this.turn % 2) + 1);
 			this.turn++;
 			return true;
 		}

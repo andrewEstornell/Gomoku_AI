@@ -20,4 +20,6 @@ public class MoveWrapper {
 	public int getValue() { return value; }
 	public void setMove(int[] move) { this.move = move; }
 	public void setValue(int value) { this.value = value; }
+	@Override
+	public String toString() {return "[" + this.move[0] + "," + this.move[1] + "] " + ": " + this.value;}
 }
