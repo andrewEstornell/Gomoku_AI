@@ -5,6 +5,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import board.BoardInterface;
 import tree.MoveWrapper;
@@ -100,7 +101,7 @@ public class Main
 			Callable<MoveWrapper> task = () -> 
 			{
 					Tree tree = new Tree(new BoardInterface(possibleBoardInterface), work);
-					numberOfGeneratedBoards.compareAndSet(numberOfGeneratedBoards.get(), numberOfGeneratedBoards.get() + tree.getNumberOfGeneratedBoards());
+					while(!numberOfGeneratedBoards.compareAndSet(numberOfGeneratedBoards.get(), numberOfGeneratedBoards.get() + tree.getNumberOfGeneratedBoards()));
 					//System.out.println(tree.getBestMoveWrapper().toString());
 					return tree.getBestMoveWrapper();
 				
@@ -119,7 +120,7 @@ public class Main
 				e.printStackTrace();
 			}
 		}
-		MoveWrapper bestMove = new MoveWrapper(new int[2], 0);
+		MoveWrapper bestMove = new MoveWrapper(bestMoves.get(0).getMove(), bestMoves.get(0).getValue());
 		for(MoveWrapper move: bestMoves)
 		{
 			if (move.getValue() > bestMove.getValue())

@@ -208,14 +208,7 @@ public class Tree
 	
 	public MoveWrapper getBestMoveWrapper()
 	{
-		for(MoveWrapper move: this.childValues)
-		{
-			if(move.getValue() == this.optimalValue)
-			{
-				return move;
-			}
-		}
-		return new MoveWrapper(new int[] {0,0}, 0);
+		return new MoveWrapper(this.childValues.get(0).getMove(), this.optimalValue);
 	}
 	
 	
