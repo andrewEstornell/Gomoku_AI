@@ -15,30 +15,34 @@ public class Tree
 	private ArrayList<MoveWrapper> childValues;
 	private int optimalValue;
 	private ArrayList<int[]> initialMoves;
-	private int numberOfTrivialBoards;
+	private long numberOfTrivialBoards;
 	private int bestValue;
 	private ArrayList<ArrayList<BoardInterface>> firstRows;
 	private long totalNumberOfBoards;
 	private boolean hasBeenSeeded;
 	private int[] seededMove;
+	private long timesPruned;
+	private static volatile int globalAlpha;
+	private static volatile int globalBeta;
+	private static volatile Object alphaLock = new Object();
+	private static volatile Object betaLock = new Object();
 
 	public Tree(BoardInterface rootBoardInterface, int[] seededMove)
 	{	
 		
-		// These are temperary values, they work for now, but more calculation is needed to find the exact values
+		// These are temporary values, they work for now, but more calculation is needed to find the exact values
+		// NOTE: -2 seems to be a good enough difficulty
 		this.maxDepth = (2 * rootBoardInterface.getInARowToWin()) - 2;
-		this.optimalSymCheck = this.maxDepth - 4;//Math.min(rootBoardInterface.getInARowToWin(), (rootBoardInterface.getBoardSize1() * rootBoardInterface.getBoardSize2()) - rootBoardInterface.getTurn() -1);
+		this.optimalSymCheck = this.maxDepth - 3;
 		this.maxOrderCheck = this.maxDepth - 1;
 		this.rootBoardInterface = rootBoardInterface;
 		this.seededMove = seededMove;
-		//this.rootBoardInterface.generatePossibleMoves(); // This function also generates the ArrayList of possibleMoves for the board
-		//this.rootBoardInterface.setChildren(new ArrayList<BoardInterface>()); // Reinitializes the child ArrayList so that there are not leftover children from previous iterations
-		//this.rootBoardInterfaceMoves = this.rootBoardInterface.getPossibleMoves(); 
 		this.rootBoardInterface.setValue(-2); // Used in print out later to test if the rootBoardInterface value was actually changed
 		this.firstRows = new ArrayList<ArrayList<BoardInterface>>(); // Stores the first few rows up to this.optimalSymCheck, so that we may check them for symmetry
 		this.childValues = new ArrayList<MoveWrapper>();
 		// The pre-seeded Move we wish to investigate
 		this.hasBeenSeeded = false;
+		this.timesPruned = 0;
 		
 		
 		
@@ -95,14 +99,40 @@ public class Tree
 				else if(boardInterface.getEvaluationType() == -1)
 				{
 					beta = Math.min(beta, boardInterface.getValue());
+					// Synchronize and update beta/globalBeta to both be the best value
+					synchronized(betaLock)
+					{
+						if(beta < globalBeta) 
+						{
+							globalBeta = beta;
+						}
+						if(beta > globalBeta)
+						{
+							beta = globalBeta;
+						}
+					}
+					
 				}
 				else if(boardInterface.getEvaluationType() == 1)
 				{
 					alpha = Math.max(alpha, boardInterface.getValue());
+					// Synchronize and update alpha/globalAlpha to both be the best value
+					synchronized(alphaLock)
+					{
+						if(alpha > globalAlpha)
+						{
+							globalAlpha = alpha;
+						}
+						if(alpha < globalAlpha)
+						{
+							alpha = globalAlpha;
+						}
+					}
 				}
 				// Fast prune
 				if(alpha >= beta)
 				{
+					this.timesPruned++;
 					return boardInterface.getValue();
 				}
 			}
@@ -166,9 +196,22 @@ public class Tree
 			}
 			this.bestValue = Math.max(this.bestValue, childValue); // updating best value
 			alpha = Math.max(alpha, childValue); // updating upper bound
+			synchronized(alphaLock)
+			{
+				if(alpha > globalAlpha)
+				{
+					globalAlpha = alpha;
+				}
+				
+				if(alpha < globalAlpha)
+				{
+					alpha = globalAlpha;
+				}
+			}
 			// Slow prune
 			if(alpha >= beta)
 			{
+				this.timesPruned++;
 				break;
 			}
 		}
@@ -229,6 +272,8 @@ public class Tree
 		{
 			if(boardInterface.isEqualUpToSymmetry(storedBoardInterface))
 			{
+				//boardInterface.displayBoard();
+				//storedBoardInterface.displayBoard();
 				boardInterface.setValue(storedBoardInterface.getValue());
 				boardInterface.setEvaluationType(storedBoardInterface.getEvaluationType());
 				//System.out.println("____________________\n StoredBoard");
@@ -250,5 +295,13 @@ public class Tree
 	public long getNumberOfGeneratedBoards()
 	{
 		return this.totalNumberOfBoards;
+	}
+	public long getTimesPruned()
+	{
+		return this.timesPruned;
+	}
+	public long getNumberOfTrivialBoards()
+	{
+		return this.numberOfTrivialBoards;
 	}
 }

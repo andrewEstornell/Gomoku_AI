@@ -21,7 +21,8 @@ public class Main
 	public static Button[][] buttons;
 	public static BoardInterface boardInterface;
 	public static AtomicLong numberOfGeneratedBoards = new AtomicLong(0);
-	
+	public static AtomicLong timesPruned = new AtomicLong(0);
+	public static AtomicLong numberOfTrivialBoards = new AtomicLong(0);
 	public static void main(String[] args)
 	{
 		// Set up and user input
@@ -75,9 +76,12 @@ public class Main
 			else
 			{
 				int[] AImove = getAIMove(new BoardInterface(boardInterface), parallelismLevel);
-				System.out.println("AI Move generated from " + numberOfGeneratedBoards.get() + " boards");
 				boardInterface.makeMove(AImove[0], AImove[1]);
 				boardInterface.updateBounds(AImove[0], AImove[1]);
+				System.out.println("Times Pruned: " + timesPruned.get());
+				System.out.println("Number of trivial boards: " + numberOfTrivialBoards.get());
+				System.out.println("Number of boards: " + numberOfGeneratedBoards.get());
+				System.out.println("Percent pruned: " + (timesPruned.doubleValue()/numberOfGeneratedBoards.doubleValue()) * 100);
 				System.out.println("AI move made"); // Debug
 				Main.buttons[AImove[0]][AImove[1]].iconSetting(AImove[0], AImove[1]);
 			}
@@ -85,6 +89,7 @@ public class Main
 			
 		}
 		boardInterface.displayBoard();
+		System.out.println();
 		System.out.println(boardInterface.getWinner() + " has won!");
 
 	}
@@ -94,7 +99,7 @@ public class Main
 		ArrayList<Future<MoveWrapper>> results = new ArrayList<Future<MoveWrapper>>();
 		// Maybe use generatePossibleMoves() here instead?
 		possibleBoardInterface.generateOrderedMoves();
-		
+		System.out.println(possibleBoardInterface.getPossibleMoves().size());
 		// Create a Callable for each possible moves
 		for(int[] work: possibleBoardInterface.getPossibleMoves())
 		{
@@ -102,6 +107,8 @@ public class Main
 			{
 					Tree tree = new Tree(new BoardInterface(possibleBoardInterface), work);
 					while(!numberOfGeneratedBoards.compareAndSet(numberOfGeneratedBoards.get(), numberOfGeneratedBoards.get() + tree.getNumberOfGeneratedBoards()));
+					while(!timesPruned.compareAndSet(timesPruned.get(), timesPruned.get() + tree.getTimesPruned()));
+					while(!numberOfTrivialBoards.compareAndSet(numberOfTrivialBoards.get(), numberOfTrivialBoards.get() + tree.getNumberOfTrivialBoards()));
 					//System.out.println(tree.getBestMoveWrapper().toString());
 					return tree.getBestMoveWrapper();
 				
@@ -120,6 +127,7 @@ public class Main
 				e.printStackTrace();
 			}
 		}
+		executor.shutdown();
 		MoveWrapper bestMove = new MoveWrapper(bestMoves.get(0).getMove(), bestMoves.get(0).getValue());
 		for(MoveWrapper move: bestMoves)
 		{
