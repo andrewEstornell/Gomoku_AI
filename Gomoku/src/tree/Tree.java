@@ -21,6 +21,7 @@ public class Tree
 	
 	private int numberOfTrivialBoards;
 	private long totalNumberOfBoards;
+	private long numberOfPrunes;
 	private ArrayList<ArrayList<BoardInterface>> firstRows; // Stores previously investigated boards, used to check for triviality
 	
 	
@@ -36,6 +37,7 @@ public class Tree
 		
 		this.numberOfTrivialBoards = 0;
 		this.totalNumberOfBoards = 0;
+		this.numberOfPrunes = 0;
 
 		this.rootBoardInterface = rootBoardInterface;
 		this.rootBoardInterface.generatePossibleMoves(); // This function also generates the ArrayList of possibleMoves for the board
@@ -58,6 +60,8 @@ public class Tree
 		this.optimalValue = this.alphaBeta(this.rootBoardInterface, 0, -10000, 10000, 1);
 		System.out.println("Number of Trivial boards: " + this.numberOfTrivialBoards);
 		System.out.println("Total number of boards:   " + this.totalNumberOfBoards);
+		System.out.println("Number of prunes: " + this.numberOfPrunes);
+		System.out.println("% pruned: " + (double)this.numberOfPrunes/(double)this.totalNumberOfBoards);
 	}
 	
 	
@@ -89,7 +93,7 @@ public class Tree
 			{
 				
 				
-				this.numberOfTrivialBoards ++;
+				this.numberOfTrivialBoards++;
 				if(boardInterface.getEvaluationType() == 0)
 				{
 					return boardInterface.getValue();
@@ -106,6 +110,7 @@ public class Tree
 				// Fast prune
 				if(alpha >= beta)
 				{
+					this.numberOfPrunes++;
 					return boardInterface.getValue();
 				}
 			}
@@ -162,6 +167,7 @@ public class Tree
 			// Slow prune
 			if(alpha >= beta)
 			{
+				this.numberOfPrunes++;
 				break;
 			}
 		}
@@ -239,11 +245,4 @@ public class Tree
 		this.firstRows.get(currentDepth).add(boardInterface);
 		return false;
 	}
-	
-	
-
-	
-	
-	
-	
 }
